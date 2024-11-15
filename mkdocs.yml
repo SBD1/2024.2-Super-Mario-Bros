@@ -1,0 +1,41 @@
+site_name: Super Mario Bros
+repo_url: https://github.com/SBD1/2024.2-Super-Mario-Bros
+repo_name: SBD1/2024.2-Super-Mario-Bros
+
+nav:
+  - Início: index.md
+
+
+
+theme:
+  name: material
+  language: pt-BR
+  logo: https://upload.wikimedia.org/wikipedia/commons/0/05/Mario_Series_Logo.svg
+  features:
+    - navigation.instant
+    - navigation.sections 
+    - navigation.top
+    - navigation.tabs
+    - search.suggest
+    - search.highlight
+    - navigation.footer
+  theme:
+  palette:
+    - scheme: default
+      primary: red
+      toggle:
+        icon: material/weather-night
+        name: Modo noturno
+    - scheme: slate
+      primary: red 
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+  icon:
+    repo: fontawesome/brands/git-alt 
+extra:
+  social:
+    - icon: fontawesome/brands/github 
+      link: https://github.com/Requisitos-de-Software/2024.2-Grupo07
+plugins:
+  - search
