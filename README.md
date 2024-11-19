@@ -15,7 +15,7 @@ No jogo, você controla o personagem Mario, um encanador italiano, que embarca e
   - [Apresentação Módulo 2]()
   - [Aoresentação Módulo 3]()
 
- ## 🤝 Contribuidores
+ ## 👨‍💻 Equipe do Projeto
 
 <div align="center">
   <table>
