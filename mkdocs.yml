@@ -8,6 +8,7 @@ nav:
       - Modelo Entidade Relacionamento: entidade-relacionamento.md
       - Modelo Relacional: modelo-relacional.md
       - Dicionário: dicionario.md
+      - Apresentação: apresentacao.md
 
 theme:
   name: material
