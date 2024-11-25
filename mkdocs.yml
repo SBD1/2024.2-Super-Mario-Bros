@@ -5,11 +5,7 @@ repo_name: SBD1/2024.2-Super-Mario-Bros
 nav:
   - Início: index.md
   - Entrega 1:
-    - Modelo Entidade Relacional: 
-    - Modelo Relacional: 
-    - Dicionário: dicionario.md
-
-
+      - Dicionário: dicionario.md
 
 theme:
   name: material
@@ -23,7 +19,6 @@ theme:
     - search.suggest
     - search.highlight
     - navigation.footer
-  theme:
   palette:
     - scheme: default
       primary: red
@@ -37,9 +32,11 @@ theme:
         name: Modo claro
   icon:
     repo: fontawesome/brands/git-alt 
+
 extra:
   social:
-    - icon: fontawesome/brands/github 
+    - icon: fontawesome/brands/github
       link: https://github.com/Requisitos-de-Software/2024.2-Grupo07
+
 plugins:
   - search
