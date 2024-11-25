@@ -10,10 +10,8 @@ O modelo relacional é um modelo de dados representativo, amplamente utilizado c
 Figura 1: Modelo Relacional 2.0 Super Mario Bros 
 
 <details>
+
   <summary>Versão 1</summary>
-  
-  ![Modelo Relacional](./assets/modelo-relacional-v1.jpeg)
-Figura 2: Modelo Relacional 1.0 Super Mario Bros 
-
-
+  <img src="https://github.com/SBD1/2024.2-Super-Mario-Bros/raw/main/docs/assets/modelo-relacional-v1.jpeg" alt="Diagrama Entidade Relacional 1.0 Super Mario Bros">
+  Figura 2: Diagrama Entidade Relacional 1.0 Super Mario Bros
 </details>
