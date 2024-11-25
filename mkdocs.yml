@@ -4,9 +4,10 @@ repo_name: SBD1/2024.2-Super-Mario-Bros
 
 nav:
   - Início: index.md
-  - Entrega 1: 
-   - Dicionário: dicionario.md
-   - 
+  - Entrega 1:
+    - Modelo Entidade Relacional: 
+    - Modelo Relacional: 
+    - Dicionário: dicionario.md
 
 
 
