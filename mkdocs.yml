@@ -9,6 +9,11 @@ nav:
       - Modelo Relacional: modelo-relacional.md
       - Dicionário: dicionario.md
       - Apresentação: apresentacao.md
+  - Entrega 2:
+      - DDL: ddl.md
+      - DML: dml.md
+      - DQL: dql.md
+      - Álgebra Relacional: algebra-relacional.md
 
 theme:
   name: material
