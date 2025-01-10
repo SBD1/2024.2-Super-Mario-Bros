@@ -173,3 +173,169 @@ CREATE TABLE IF NOT EXISTS Moeda (
 - `idMoeda`: Identificador único da moeda (chave primária).
 - `valor`: Valor da moeda.
 - `idBloco`: Referência ao bloco onde a moeda está armazenada.
+
+
+### Loja
+
+A tabela **Loja** armazena informações sobre as lojas presentes no jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Loja (
+    idLoja SERIAL NOT NULL,
+    nome VARCHAR(50) NOT NULL,
+    idLocal INTEGER NOT NULL,
+
+    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
+);
+```
+
+**Colunas:**
+
+- `idLoja`: Identificador único da loja (chave primária).
+- `nome`: Nome da loja.
+- `idLocal`: Referência ao local associado à loja.
+
+### Item
+
+A tabela **Item** armazena informações sobre os itens disponíveis no jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Item (
+    idItem SERIAL NOT NULL,
+    tipo VARCHAR(30) NOT NULL,
+    efeito VARCHAR(50),
+    duração INTEGER,
+    raridade VARCHAR(20),
+    idBloco INTEGER NOT NULL,
+
+    CONSTRAINT item_pk PRIMARY KEY (idItem),
+    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco)
+);
+```
+
+**Colunas:**
+
+- `idItem`: Identificador único do item (chave primária).
+- `tipo`: Tipo do item.
+- `efeito`: Efeito do item.
+- `duração`: Duração do efeito do item.
+- `raridade`: Raridade do item.
+- `idBloco`: Referência ao bloco relacionado.
+
+### Personagem
+
+A tabela **Personagem** armazena informações sobre os personagens no jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Personagem (
+    idPersonagem SERIAL NOT NULL,
+    nome VARCHAR(20) NOT NULL,
+    vida INTEGER NOT NULL,
+    dano INTEGER NOT NULL,
+    pontos INTEGER NOT NULL,
+    idLocal INTEGER NOT NULL,
+
+    CONSTRAINT personagem_pk PRIMARY KEY (idPersonagem),
+    FOREIGN KEY (idLocal) REFERENCES Local(idLocal)
+);
+```
+
+**Colunas:**
+
+- `idPersonagem`: Identificador único do personagem (chave primária).
+- `nome`: Nome do personagem.
+- `vida`: Vida do personagem.
+- `dano`: Dano causado pelo personagem.
+- `pontos`: Pontos associados ao personagem.
+- `idLocal`: Referência ao local onde o personagem se encontra.
+
+### Local
+
+A tabela **Local** armazena informações sobre os locais no jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Local (
+    idLocal SERIAL NOT NULL,
+    nome VARCHAR(50) NOT NULL,
+    descricao TEXT,
+    idFase INTEGER NOT NULL,
+
+    CONSTRAINT local_pk PRIMARY KEY (idLocal),
+    FOREIGN KEY (idFase) REFERENCES Fase(idFase)
+);
+```
+
+**Colunas:**
+
+- `idLocal`: Identificador único do local (chave primária).
+- `nome`: Nome do local.
+- `descricao`: Descrição do local.
+- `idFase`: Referência à fase relacionada ao local.
+
+### Checkpoint
+
+A tabela **Checkpoint** registra informações sobre os pontos de controle no jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Checkpoint (
+    idCheckpoint SERIAL NOT NULL,
+    pontuação INTEGER NOT NULL,
+    idLocal INTEGER NOT NULL,
+
+    CONSTRAINT checkpoint_pk PRIMARY KEY (idCheckpoint)
+);
+```
+
+**Colunas:**
+
+- `idCheckpoint`: Identificador único do checkpoint (chave primária).
+- `pontuação`: Pontuação registrada no checkpoint.
+- `idLocal`: Referência ao local associado ao checkpoint.
+
+### Jogador
+
+A tabela **Jogador** armazena informações sobre os jogadores do jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Jogador (
+    idJogador SERIAL NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    moeda INTEGER NOT NULL,
+    idItem INTEGER,
+    idYoshi INTEGER,
+
+    CONSTRAINT jogador_pk PRIMARY KEY (idJogador),
+    FOREIGN KEY (idItem) REFERENCES Inventário(IdItem),
+    FOREIGN KEY (idYoshi) REFERENCES Yoshi(idYoshi)
+);
+```
+
+**Colunas:**
+
+- `idJogador`: Identificador único do jogador (chave primária).
+- `tipo`: Tipo de jogador.
+- `moeda`: Quantidade de moedas do jogador.
+- `idItem`: Referência ao item no inventário.
+- `idYoshi`: Referência ao Yoshi associado.
+
+### Instancia
+
+A tabela **Instancia** armazena informações sobre as instâncias de jogo.
+
+```sql
+CREATE TABLE IF NOT EXISTS Instancia (
+    idInstancia SERIAL NOT NULL,
+    vidaAtual INTEGER NOT NULL,
+    moedaAtual INTEGER NOT NULL,
+    idJogador INTEGER NOT NULL,
+
+    CONSTRAINT instancia_pk PRIMARY KEY (idInstancia)
+);
+```
+
+**Colunas:**
+
+- `idInstancia`: Identificador único da instância (chave primária).
+- `vidaAtual`: Vida atual da instância.
+- `moedaAtual`: Quantidade de moedas na instância.
+- `idJogador`: Referência ao jogador associado.
