@@ -2,11 +2,29 @@ import curses
 import random
 import time
 
+import psycopg2
+
 # Configurações do jogo
 SCENARIO_WIDTH = 20
 MARIO = "M"
 OBSTACLE = "|"
 GROUND_LEVEL = 1  # Linha do chão
+
+def connect_to_db():
+    try:
+        connection = psycopg2.connect(
+            dbname="supermario",
+            user="root",
+            password="123456",
+            host="localhost",
+            port="5432"
+        )
+        print("Conectado ao banco de dados!")
+        return connection
+    except Exception as e:
+        print(f"Erro ao conectar ao banco de dados: {e}")
+        return None
+
 
 def generate_scenario(obstacles):
     """Gera o cenário atual."""
@@ -17,9 +35,35 @@ def generate_scenario(obstacles):
     return "".join(scenario)
 
 
-def init_game():
-    choose_character()
-    choose_phase()
+def init_game(stdscr):
+    connect_to_db()
+    time.sleep(1)
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI")
+    stdscr.refresh()
+    stdscr.getch()
+
+    character = choose_character(stdscr)  # Escolher o personagem
+    
+    phase = choose_phase(stdscr)  # Escolher a fase
+    local_phase = initial_local_by_phase(phase)
+    stdscr.clear()
+    stdscr.addstr(0, 0, f"Você está na fase: {phase}")
+    stdscr.refresh()
+    stdscr.getch()
+
+    while character:
+        encounter = exploration_local(stdscr, local_phase, character)
+        if encounter:
+            mario_battle_turn(stdscr, character)  # Iniciar o jogo com o personagem escolhido
+            player_turn(stdscr, player, encounter)
+
+        if not character:        
+            stdscr.clear()
+            stdscr.addstr(0, 0, f"{character} foi derrotado")
+            stdscr.refresh()
+            stdscr.getch()
 
 
 def choose_phase(stdscr):
@@ -29,7 +73,7 @@ def choose_phase(stdscr):
     stdscr.addstr(1, 0, "[1] Floresta Tal Tal")
     stdscr.addstr(2, 0, "[2] Deserto")
     stdscr.addstr(3, 0, "[3] Montanha")
-    stdscr.addstr(5, 0, "Pressione o número correspondente a fase.")
+    stdscr.addstr(5, 0, "Pressione o número correspondente à fase.")
     stdscr.refresh()
 
     while True:
@@ -59,13 +103,58 @@ def choose_character(stdscr):
         elif key == ord('l') or key == ord('L'):
             return "L"
 
-
-def exploration_phase(stdscr):
-    """"""
+def exploration_local(stdscr):
     stdscr.clear()
+    stdscr.addstr(0, 0, "Escolha uma direção para se mover (sul, norte):")
+    stdscr.refresh()
+
+    direction = stdscr.getkey()
+    if direction in ["up", "down"]:
+        encounter = move_player(direction) # vai moter o jogador de local e retorna o que foi encontrado
+
+    else:
+        stdscr.addstr(3, 0, "Direção inválida")
+        encounter = None
+    stdscr.refresh()
+    stdscr.getch()
+
+    return encounter
+
+def player_turn(stdcsr, player, encounter):
+    while True:
+        stdcsr.clear()
+        
+        if encounter == "Combat":
+            stdcsr.addstr(0, 0, "Você encontrou inimigos! Se prepare para o combate.")
+            mario_battle_turn(stdscr, player)  # Iniciar o jogo com o personagem escolhido
+        elif encounter == "shop":
+            stdcsr.addstr(0, 0, "Você encontrou uma loja!")
+            stdcsr.addstr(0, 1, "[1]")
+            stdcsr.addstr(0, 2, "[2]")
+        elif encounter == "blocos":
+            stdcsr.addstr(0, 0, "Você encontrou uma blocos!")
+            stdcsr.addstr(0, 1, "[1]")
+            stdcsr.addstr(0, 2, "[2]")
+        elif encounter == "cano":
+            stdcsr.addstr(0, 0, "Você encontrou uma cano!")
+            stdcsr.addstr(0, 1, "[1]")
+            stdcsr.addstr(0, 2, "[2]")
+
+        stdcsr.refresh()
+        choice = stdcsr.getkey()
+
+        if choice == "1":
+            print("resultados da escolha 1")
+        elif choice == "1":
+            print("resultados da escolha 1")
+        else:
+            stdcsr.addstr(4, 0, "Escolha inválida. Tente novamente.")
+
+        stdcsr.refresh()
+        stdcsr.gettch()
 
 
-def mario_game_turn(stdscr):
+def mario_battle_turn(stdscr, character):
     curses.curs_set(0)  # Ocultar o cursor
     stdscr.nodelay(1)   # Não bloquear para entrada
     stdscr.timeout(200) # Atualizar a tela a cada 200ms
@@ -83,8 +172,8 @@ def mario_game_turn(stdscr):
         
         # Gera o cenário
         scenario = generate_scenario(obstacles)
-        ground_line = scenario[:mario_position] + MARIO + scenario[mario_position + 1:]
-        air_line = " " * mario_position + MARIO + " " * (SCENARIO_WIDTH - mario_position - 1)
+        ground_line = scenario[:mario_position] + character + scenario[mario_position + 1:]
+        air_line = " " * mario_position + character + " " * (SCENARIO_WIDTH - mario_position - 1)
         
         # Mostra o cenário com Mario na posição correta
         if mario_y == GROUND_LEVEL:
@@ -138,10 +227,6 @@ def mario_game_turn(stdscr):
     stdscr.refresh()
     time.sleep(2)
 
-# Inicia o jogo
-curses.wrapper(mario_game_turn)
 
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.clear()
-    stdscr.addstr(0, 0, "")
+# Inicia o jogo chamando `init_game`
+curses.wrapper(init_game)
