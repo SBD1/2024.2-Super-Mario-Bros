@@ -49,14 +49,14 @@ def init_game(stdscr):
     character = choose_character(stdscr)  # Escolher o personagem
     
     phase = choose_phase(stdscr)  # Escolher a fase
-    local_phase = initial_local_by_phase(phase)
+    local_phase = initial_local_by_phase(phase) # Fazer consulta sql para retornar qual é o local iniciar da fase
     stdscr.clear()
     stdscr.addstr(0, 0, f"Você está na fase: {phase}")
     stdscr.refresh()
     stdscr.getch()
 
     while character:
-        encounter = exploration_local(stdscr, local_phase, character)
+        local_phase, encounter = exploration_local(stdscr, local_phase, character)
         if encounter:
             player_turn(stdscr, player, encounter)
 
@@ -69,6 +69,8 @@ def init_game(stdscr):
 
 def choose_phase(stdscr):
     """Exibe a tela para o jogador escolher a fase."""
+
+    #Fazer chamada sql para consultar quais fases o jogador pode escolher
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha a fase:")
     stdscr.addstr(1, 0, "[1] Floresta Tal Tal")
@@ -89,6 +91,8 @@ def choose_phase(stdscr):
 
 def choose_character(stdscr):
     """Exibe a tela para o jogador escolher o personagem."""
+
+    #Fazer chamada sql para consultar quais personagens o jogador pode esocolher
     curses.curs_set(0)
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha seu personagem:")
@@ -111,7 +115,7 @@ def exploration_local(stdscr, local_phase, character):
 
     direction = stdscr.getkey()
     if direction in ["up", "down"]:
-        encounter = move_player(local_phase, direction, character) # vai moter o jogador de local e retorna o que foi encontrado
+        new_local, encounter = move_player(local_phase, direction, character) # vai moter o jogador de local e retorna o que foi encontrado
 
     else:
         stdscr.addstr(3, 0, "Direção inválida")
@@ -119,7 +123,19 @@ def exploration_local(stdscr, local_phase, character):
     stdscr.refresh()
     stdscr.getch()
 
-    return encounter
+    return new_local, encounter
+
+def move_player(local_phase, direction, character):
+    if direction == "norte":
+        new_local = get_local_phase_by_direction()
+        encounter = get_encount_by_direction()
+    if direction == "sul":
+        new_local = get_local_phase_by_direction()        
+        encounter = get_encount_by_direction()
+    
+    # Atualizar em sql a nova posição do jogador 
+
+    return new_local, encounter
 
 def player_turn(stdcsr, player, encounter):
     while True:
@@ -128,26 +144,44 @@ def player_turn(stdcsr, player, encounter):
         if encounter == "Combat":
             stdcsr.addstr(0, 0, "Você encontrou inimigos! Se prepare para o combate.")
             mario_battle_turn(stdscr, player)  # Iniciar o jogo com o personagem escolhido
-        elif encounter == "shop":
+        elif encounter == "loja":
             stdcsr.addstr(0, 0, "Você encontrou uma loja!")
-            stdcsr.addstr(0, 1, "[1]")
-            stdcsr.addstr(0, 2, "[2]")
+            stdcsr.addstr(0, 1, "[1] Comprar")
+            stdcsr.addstr(0, 2, "[2] Vender")
         elif encounter == "blocos":
             stdcsr.addstr(0, 0, "Você encontrou uma blocos!")
-            stdcsr.addstr(0, 1, "[1]")
-            stdcsr.addstr(0, 2, "[2]")
+            stdcsr.addstr(0, 1, "[1] Bater no bloco")
+            stdcsr.addstr(0, 2, "[2] Ignora bloco")
         elif encounter == "cano":
             stdcsr.addstr(0, 0, "Você encontrou uma cano!")
-            stdcsr.addstr(0, 1, "[1]")
-            stdcsr.addstr(0, 2, "[2]")
+            stdcsr.addstr(0, 1, "[1] Tentar entrar no cano")
+            stdcsr.addstr(0, 2, "[2] Ignorar cano")
+        elif encounter == "npc":
+            stdcsr.addstr(0, 0, "Você encontrou um npc!")
+            stdcsr.addstr(0, 1, "[1] Conversar com npc")
+            stdcsr.addstr(0, 2, "[2] Ignorar npc")
 
         stdcsr.refresh()
         choice = stdcsr.getkey()
 
         if choice == "1":
-            print("resultados da escolha 1")
+            if encounter == "loja":
+                print("Fazer interação de comprar algo da loja")
+            elif encounter == "blocos":
+                print("Fazer interação de bater no bloco")
+            elif encounter == "cano":
+                print("Fazer interação de entrar no cano")
+            elif encounter == "npc":
+                print("Fazer interação de conversar com npc")
         elif choice == "1":
-            print("resultados da escolha 1")
+            if encounter == "loja":
+                print("Fazer interação de vender algo da loja")
+            elif encounter == "blocos":
+                print("Fazer interação de ignorar bloco")
+            elif encounter == "cano":
+                print("Fazer interação de ignorar cano")
+            elif encounter == "npc":
+                print("Fazer interação de ignorar npc")
         else:
             stdcsr.addstr(4, 0, "Escolha inválida. Tente novamente.")
 
