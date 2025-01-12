@@ -6,11 +6,17 @@ Esse diagrama oferece uma perspectiva lógica do banco de dados, permitindo uma 
 
 ### Versão atualizada
 
-<img src="https://github.com/SBD1/2024.2-Super-Mario-Bros/raw/main/docs/assets/entidade-relacionamento.jpeg" alt="Diagrama Entidade Relacional 3.0 Super Mario Bros" style="max-width: 100%; height: auto;">
+<img src="https://github.com/SBD1/2024.2-Super-Mario-Bros/raw/main/docs/assets/entidade-relacionamento2.jpg" alt="Diagrama Entidade Relacional 3.0 Super Mario Bros" style="max-width: 100%; height: auto;">
 Figura 1: Diagrama Entidade Relacional 3.0 Super Mario Bros
 
 <details>
   <summary>Versão 1</summary>
   <img src="https://github.com/SBD1/2024.2-Super-Mario-Bros/raw/main/docs/assets/entidade-relacionamento-v1.jpeg" alt="Diagrama Entidade Relacional 1.0 Super Mario Bros">
   Figura 2: Diagrama Entidade Relacional 1.0 Super Mario Bros
+</details>
+
+<details>
+  <summary>Versão 2</summary>
+  <img src="https://github.com/SBD1/2024.2-Super-Mario-Bros/raw/main/docs/assets/entidade-relacionamento.jpeg" alt="Diagrama Entidade Relacional 1.0 Super Mario Bros">
+  Figura 3: Diagrama Entidade Relacional 2.0 Super Mario Bros
 </details>
