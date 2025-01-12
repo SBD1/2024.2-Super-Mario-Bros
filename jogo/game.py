@@ -4,9 +4,9 @@ import time
 
 # Configurações do jogo
 SCENARIO_WIDTH = 20
+MARIO = "M"
 OBSTACLE = "|"
 GROUND_LEVEL = 1  # Linha do chão
-
 
 def generate_scenario(obstacles):
     """Gera o cenário atual."""
@@ -15,6 +15,31 @@ def generate_scenario(obstacles):
         if 0 <= pos < SCENARIO_WIDTH:
             scenario[pos] = OBSTACLE
     return "".join(scenario)
+
+
+def init_game():
+    choose_character()
+    choose_phase()
+
+
+def choose_phase(stdscr):
+    """Exibe a tela para o jogador escolher a fase."""
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Escolha a fase:")
+    stdscr.addstr(1, 0, "[1] Floresta Tal Tal")
+    stdscr.addstr(2, 0, "[2] Deserto")
+    stdscr.addstr(3, 0, "[3] Montanha")
+    stdscr.addstr(5, 0, "Pressione o número correspondente a fase.")
+    stdscr.refresh()
+
+    while True:
+        key = stdscr.getch()
+        if key == ord('1'):
+            return '1'
+        elif key == ord('2'):
+            return '2'
+        elif key == ord('3'):
+            return '3'
 
 
 def choose_character(stdscr):
@@ -35,38 +60,42 @@ def choose_character(stdscr):
             return "L"
 
 
-def mario_game(stdscr):
-    character = choose_character(stdscr)  # Escolha do personagem
+def exploration_phase(stdscr):
+    """"""
+    stdscr.clear()
+
+
+def mario_game_turn(stdscr):
     curses.curs_set(0)  # Ocultar o cursor
     stdscr.nodelay(1)   # Não bloquear para entrada
-    stdscr.timeout(200)  # Atualizar a tela a cada 200ms
-
+    stdscr.timeout(200) # Atualizar a tela a cada 200ms
+    
     score = 0
     lives = 3
     mario_position = 1
     obstacles = [random.randint(10, SCENARIO_WIDTH - 1)]
-    mario_y = GROUND_LEVEL  # Altura atual do personagem
-    jumping = False         # Indica se o personagem está pulando
+    mario_y = GROUND_LEVEL  # Altura atual do Mario
+    jumping = False         # Indica se o Mario está pulando
     jump_phase = 0          # Fases do pulo (subindo/descendo)
 
     while lives > 0:
         stdscr.clear()
-
+        
         # Gera o cenário
         scenario = generate_scenario(obstacles)
-        ground_line = scenario[:mario_position] + character + scenario[mario_position + 1:]
-        air_line = " " * mario_position + character + " " * (SCENARIO_WIDTH - mario_position - 1)
-
-        # Mostra o cenário com o personagem na posição correta
+        ground_line = scenario[:mario_position] + MARIO + scenario[mario_position + 1:]
+        air_line = " " * mario_position + MARIO + " " * (SCENARIO_WIDTH - mario_position - 1)
+        
+        # Mostra o cenário com Mario na posição correta
         if mario_y == GROUND_LEVEL:
             stdscr.addstr(0, 0, " " * SCENARIO_WIDTH)  # Linha de cima vazia
-            stdscr.addstr(1, 0, ground_line)          # Personagem no chão
+            stdscr.addstr(1, 0, ground_line)          # Mario no chão
         else:
-            stdscr.addstr(0, 0, air_line)             # Personagem no ar
+            stdscr.addstr(0, 0, air_line)             # Mario no ar
             stdscr.addstr(1, 0, scenario)            # Obstáculos no chão
 
         stdscr.addstr(2, 0, f"Score: {score}  |  Lives: {lives}")
-
+        
         # Atualiza obstáculos
         obstacles = [pos - 1 for pos in obstacles if pos - 1 > 0]
         if random.random() < 0.3:
@@ -109,6 +138,10 @@ def mario_game(stdscr):
     stdscr.refresh()
     time.sleep(2)
 
-
 # Inicia o jogo
-curses.wrapper(mario_game)
+curses.wrapper(mario_game_turn)
+
+def main(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.addstr(0, 0, "")
