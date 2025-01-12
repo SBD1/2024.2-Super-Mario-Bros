@@ -6,9 +6,10 @@ import psycopg2
 
 # Configurações do jogo
 SCENARIO_WIDTH = 20
-MARIO = "M"
 OBSTACLE = "|"
 GROUND_LEVEL = 1  # Linha do chão
+
+player = None
 
 def connect_to_db():
     try:
@@ -38,6 +39,7 @@ def generate_scenario(obstacles):
 def init_game(stdscr):
     connect_to_db()
     time.sleep(1)
+    
     curses.curs_set(0)
     stdscr.clear()
     stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI")
@@ -56,7 +58,6 @@ def init_game(stdscr):
     while character:
         encounter = exploration_local(stdscr, local_phase, character)
         if encounter:
-            mario_battle_turn(stdscr, character)  # Iniciar o jogo com o personagem escolhido
             player_turn(stdscr, player, encounter)
 
         if not character:        
@@ -103,14 +104,14 @@ def choose_character(stdscr):
         elif key == ord('l') or key == ord('L'):
             return "L"
 
-def exploration_local(stdscr):
+def exploration_local(stdscr, local_phase, character):
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha uma direção para se mover (sul, norte):")
     stdscr.refresh()
 
     direction = stdscr.getkey()
     if direction in ["up", "down"]:
-        encounter = move_player(direction) # vai moter o jogador de local e retorna o que foi encontrado
+        encounter = move_player(local_phase, direction, character) # vai moter o jogador de local e retorna o que foi encontrado
 
     else:
         stdscr.addstr(3, 0, "Direção inválida")
