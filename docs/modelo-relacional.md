@@ -5,7 +5,7 @@ O modelo relacional é um modelo de dados representativo, amplamente utilizado c
 
 ### Versão atualizada
 
-<iframe width="790" height="535" src="https://lucid.app/documents/embedded/c5fcc57f-6aac-4f5e-b47b-98853051d532" id="k9tudGX0Pcl3" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
+<iframe width="790" height="535" src="https://lucid.app/documents/embedded/1e8a9420-5a5b-48e4-a90f-098149c1ee5c" id="zS1IAI9kA3qh" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
 
 Figura 1: Modelo Relacional 3.0 Super Mario Bros 
 
