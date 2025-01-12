@@ -14,7 +14,7 @@ Por meio dela, desenvolvedores e administradores podem configurar a estrutura ba
 A tabela **Yoshi** armazena informações sobre a entidade Yoshi no sistema.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Yoshi (
+CREATE TABLE EXISTS Yoshi (
     idYoshi SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
     idBloco INTEGER NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS Yoshi (
 A tabela **Bloco** armazena detalhes sobre os blocos existentes no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Bloco (
+CREATE TABLE EXISTS Bloco (
     idBloco SERIAL NOT NULL,
     tipo VARCHAR(30) NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS Bloco (
 A tabela **Cano** representa conexões entre diferentes áreas.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Cano (
+CREATE TABLE EXISTS Cano (
     idCano SERIAL NOT NULL,
     idDestino VARCHAR(35) NOT NULL,
 
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS Cano (
 A tabela **Mundo** armazena informações sobre os mundos disponíveis no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Mundo (
+CREATE TABLE EXISTS Mundo (
     idMundo SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     descrição TEXT,
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS Mundo (
 A tabela **Fase** organiza os estágios do jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Fase (
+CREATE TABLE EXISTS Fase (
     idFase SERIAL NOT NULL,
     nome VARCHAR(15) NOT NULL,
     nivel INTEGER NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS Fase (
 A tabela **Inventário** armazena informações sobre os itens em posse do jogador.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Inventário (
+CREATE TABLE EXISTS Inventário (
     idIventário SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,
     idJogador INTEGER NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS Inventário (
 A tabela **Inimigo** registra detalhes sobre os inimigos no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Inimigo (
+CREATE TABLE EXISTS Inimigo (
     idInimigo SERIAL NOT NULL,
     tipo VARCHAR(15) NOT NULL,
 
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS Inimigo (
 A tabela **Moeda** armazena informações sobre as moedas coletáveis.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Moeda (
+CREATE TABLE EXISTS Moeda (
     idMoeda SERIAL NOT NULL,
     valor INTEGER NOT NULL,
     idBloco INTEGER NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS Moeda (
 A tabela **Loja** armazena informações sobre as lojas presentes no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Loja (
+CREATE TABLE EXISTS Loja (
     idLoja SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS Loja (
 A tabela **Item** armazena informações sobre os itens disponíveis no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Item (
+CREATE TABLE EXISTS Item (
     idItem SERIAL NOT NULL,
     tipo VARCHAR(30) NOT NULL,
     efeito VARCHAR(50),
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS Item (
 A tabela **Personagem** armazena informações sobre os personagens no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Personagem (
+CREATE TABLE EXISTS Personagem (
     idPersonagem SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
     vida INTEGER NOT NULL,
@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS Personagem (
 A tabela **Local** armazena informações sobre os locais no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Local (
+CREATE TABLE EXISTS Local (
     idLocal SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     descricao TEXT,
@@ -277,7 +277,7 @@ CREATE TABLE IF NOT EXISTS Local (
 A tabela **Checkpoint** registra informações sobre os pontos de controle no jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Checkpoint (
+CREATE TABLE EXISTS Checkpoint (
     idCheckpoint SERIAL NOT NULL,
     pontuação INTEGER NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -297,7 +297,7 @@ CREATE TABLE IF NOT EXISTS Checkpoint (
 A tabela **Jogador** armazena informações sobre os jogadores do jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Jogador (
+CREATE TABLE EXISTS Jogador (
     idJogador SERIAL NOT NULL,
     tipo VARCHAR(20) NOT NULL,
     moeda INTEGER NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS Jogador (
 A tabela **Instancia** armazena informações sobre as instâncias de jogo.
 
 ```sql
-CREATE TABLE IF NOT EXISTS Instancia (
+CREATE TABLE EXISTS Instancia (
     idInstancia SERIAL NOT NULL,
     vidaAtual INTEGER NOT NULL,
     moedaAtual INTEGER NOT NULL,
@@ -339,3 +339,5 @@ CREATE TABLE IF NOT EXISTS Instancia (
 - `vidaAtual`: Vida atual da instância.
 - `moedaAtual`: Quantidade de moedas na instância.
 - `idJogador`: Referência ao jogador associado.
+
+<font size="3"><p style="text-align: center">Fonte: [Gustavo Alves](https://github.com/gustaallves) e [Renan Araújo](https://github.com/renantfm4)</p></font>
