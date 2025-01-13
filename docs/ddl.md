@@ -14,7 +14,7 @@ Por meio dela, desenvolvedores e administradores podem configurar a estrutura ba
 A tabela **Yoshi** armazena informações sobre a entidade Yoshi no sistema.
 
 ```sql
-CREATE TABLE EXISTS Yoshi (
+CREATE TABLE Yoshi (
     idYoshi SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
     idBloco INTEGER NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE EXISTS Yoshi (
 A tabela **Bloco** armazena detalhes sobre os blocos existentes no jogo.
 
 ```sql
-CREATE TABLE EXISTS Bloco (
+CREATE TABLE Bloco (
     idBloco SERIAL NOT NULL,
     tipo VARCHAR(30) NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE EXISTS Bloco (
 A tabela **Cano** representa conexões entre diferentes áreas.
 
 ```sql
-CREATE TABLE EXISTS Cano (
+CREATE TABLE Cano (
     idCano SERIAL NOT NULL,
     idDestino VARCHAR(35) NOT NULL,
 
@@ -72,7 +72,7 @@ CREATE TABLE EXISTS Cano (
 A tabela **Mundo** armazena informações sobre os mundos disponíveis no jogo.
 
 ```sql
-CREATE TABLE EXISTS Mundo (
+CREATE TABLE Mundo (
     idMundo SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     descrição TEXT,
@@ -95,7 +95,7 @@ CREATE TABLE EXISTS Mundo (
 A tabela **Fase** organiza os estágios do jogo.
 
 ```sql
-CREATE TABLE EXISTS Fase (
+CREATE TABLE Fase (
     idFase SERIAL NOT NULL,
     nome VARCHAR(15) NOT NULL,
     nivel INTEGER NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE EXISTS Fase (
 A tabela **Inventário** armazena informações sobre os itens em posse do jogador.
 
 ```sql
-CREATE TABLE EXISTS Inventário (
+CREATE TABLE Inventário (
     idIventário SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,
     idJogador INTEGER NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE EXISTS Inventário (
 A tabela **Inimigo** registra detalhes sobre os inimigos no jogo.
 
 ```sql
-CREATE TABLE EXISTS Inimigo (
+CREATE TABLE Inimigo (
     idInimigo SERIAL NOT NULL,
     tipo VARCHAR(15) NOT NULL,
 
@@ -158,7 +158,7 @@ CREATE TABLE EXISTS Inimigo (
 A tabela **Moeda** armazena informações sobre as moedas coletáveis.
 
 ```sql
-CREATE TABLE EXISTS Moeda (
+CREATE TABLE Moeda (
     idMoeda SERIAL NOT NULL,
     valor INTEGER NOT NULL,
     idBloco INTEGER NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE EXISTS Moeda (
 A tabela **Loja** armazena informações sobre as lojas presentes no jogo.
 
 ```sql
-CREATE TABLE EXISTS Loja (
+CREATE TABLE Loja (
     idLoja SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE EXISTS Loja (
 A tabela **Item** armazena informações sobre os itens disponíveis no jogo.
 
 ```sql
-CREATE TABLE EXISTS Item (
+CREATE TABLE Item (
     idItem SERIAL NOT NULL,
     tipo VARCHAR(30) NOT NULL,
     efeito VARCHAR(50),
@@ -227,7 +227,7 @@ CREATE TABLE EXISTS Item (
 A tabela **Personagem** armazena informações sobre os personagens no jogo.
 
 ```sql
-CREATE TABLE EXISTS Personagem (
+CREATE TABLE Personagem (
     idPersonagem SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
     vida INTEGER NOT NULL,
@@ -254,7 +254,7 @@ CREATE TABLE EXISTS Personagem (
 A tabela **Local** armazena informações sobre os locais no jogo.
 
 ```sql
-CREATE TABLE EXISTS Local (
+CREATE TABLE Local (
     idLocal SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
     descricao TEXT,
@@ -277,7 +277,7 @@ CREATE TABLE EXISTS Local (
 A tabela **Checkpoint** registra informações sobre os pontos de controle no jogo.
 
 ```sql
-CREATE TABLE EXISTS Checkpoint (
+CREATE TABLE Checkpoint (
     idCheckpoint SERIAL NOT NULL,
     pontuação INTEGER NOT NULL,
     idLocal INTEGER NOT NULL,
@@ -297,7 +297,7 @@ CREATE TABLE EXISTS Checkpoint (
 A tabela **Jogador** armazena informações sobre os jogadores do jogo.
 
 ```sql
-CREATE TABLE EXISTS Jogador (
+CREATE TABLE Jogador (
     idJogador SERIAL NOT NULL,
     tipo VARCHAR(20) NOT NULL,
     moeda INTEGER NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE EXISTS Jogador (
 A tabela **Instancia** armazena informações sobre as instâncias de jogo.
 
 ```sql
-CREATE TABLE EXISTS Instancia (
+CREATE TABLE Instancia (
     idInstancia SERIAL NOT NULL,
     vidaAtual INTEGER NOT NULL,
     moedaAtual INTEGER NOT NULL,
