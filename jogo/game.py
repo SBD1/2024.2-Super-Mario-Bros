@@ -64,7 +64,7 @@ def init_game(stdscr):
     phase = choose_phase(stdscr)  # Escolher a fase
     local_phase = initial_local_by_phase(phase) # Fazer consulta sql para retornar qual é o local iniciar da fase
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Você está na fase: {phase}")
+    stdscr.addstr(0, 0, f"Você está na fase: {phase.name}")
     stdscr.refresh()
     stdscr.getch()
 
