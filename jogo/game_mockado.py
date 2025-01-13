@@ -13,25 +13,44 @@ player = None
 def connect_to_db():
     print("Banco de dados mockado conectado!")
 
-# Mock da função que escolhe o personagem
-def choose_character(stdscr):
+
+# Função principal do jogo
+def init_game(stdscr):
+    connect_to_db()
+    time.sleep(1)
+
     curses.curs_set(0)
     stdscr.clear()
-    stdscr.addstr(0, 0, "Escolha seu personagem:")
-    stdscr.addstr(1, 0, "[M] Mario")
-    stdscr.addstr(2, 0, "[L] Luigi")
-    stdscr.addstr(4, 0, "Pressione a tecla correspondente (M ou L) para começar.")
+    stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI")
     stdscr.refresh()
+    stdscr.getch()
 
-    while True:
-        key = stdscr.getch()
-        if key == ord('m') or key == ord('M'):
-            return "M"
-        elif key == ord('l') or key == ord('L'):
-            return "L"
+    character = choose_character(stdscr)
+
+    phase = choose_phase(stdscr)
+    local_phase = initial_local_by_phase(phase)
+    
+    stdscr.clear()
+    stdscr.addstr(0, 0, f"Você está na fase: {phase}")
+    stdscr.refresh()
+    stdscr.getch()
+
+    while character:
+        local_phase, encounter = exploration_local(stdscr, local_phase, character)
+        if encounter:
+            player_turn(stdscr, player, encounter)
+
+        if not character:
+            stdscr.clear()
+            stdscr.addstr(0, 0, f"{character} foi derrotado")
+            stdscr.refresh()
+            stdscr.getch()
+
 
 # Mock da função que escolhe a fase
 def choose_phase(stdscr):
+    """Exibe a tela para o jogador escolher a fase."""
+
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha a fase:")
     stdscr.addstr(1, 0, "[1] Floresta Tal Tal")
@@ -48,6 +67,24 @@ def choose_phase(stdscr):
             return '2'
         elif key == ord('3'):
             return '3'
+        
+
+# Mock da função que escolhe o personagem
+def choose_character(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Escolha seu personagem:")
+    stdscr.addstr(1, 0, "[M] Mario")
+    stdscr.addstr(2, 0, "[L] Luigi")
+    stdscr.addstr(4, 0, "Pressione a tecla correspondente (M ou L) para começar.")
+    stdscr.refresh()
+
+    while True:
+        key = stdscr.getch()
+        if key == ord('m') or key == ord('M'):
+            return "M"
+        elif key == ord('l') or key == ord('L'):
+            return "L"
 
 # Mock de localização inicial para cada fase
 def initial_local_by_phase(phase):
@@ -217,36 +254,6 @@ def mario_battle_turn(stdscr, character):
     stdscr.addstr(0, 0, f"Game Over! Sua pontuação final foi: {score}")
     stdscr.refresh()
     time.sleep(2)
-
-# Função principal do jogo
-def init_game(stdscr):
-    connect_to_db()
-    time.sleep(1)
-
-    curses.curs_set(0)
-    stdscr.clear()
-    stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI")
-    stdscr.refresh()
-    stdscr.getch()
-
-    character = choose_character(stdscr)
-    phase = choose_phase(stdscr)
-    local_phase = initial_local_by_phase(phase)
-    stdscr.clear()
-    stdscr.addstr(0, 0, f"Você está na fase: {phase}")
-    stdscr.refresh()
-    stdscr.getch()
-
-    while character:
-        local_phase, encounter = exploration_local(stdscr, local_phase, character)
-        if encounter:
-            player_turn(stdscr, player, encounter)
-
-        if not character:
-            stdscr.clear()
-            stdscr.addstr(0, 0, f"{character} foi derrotado")
-            stdscr.refresh()
-            stdscr.getch()
 
 # Inicia o jogo chamando `init_game`
 curses.wrapper(init_game)

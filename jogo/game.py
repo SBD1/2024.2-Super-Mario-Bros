@@ -9,6 +9,19 @@ SCENARIO_WIDTH = 20
 OBSTACLE = "|"
 GROUND_LEVEL = 1  # Linha do chão
 
+
+class Fase:
+    def __init__(self, id_phase, name):
+        self.id_phase = id_phase
+        self.name = name
+
+class Local:
+    def __init__(self, id_local, name, description):
+        self.id_local = id_local
+        self.name = name
+        self.description = description
+
+
 player = None
 
 def connect_to_db():
@@ -66,60 +79,143 @@ def init_game(stdscr):
             stdscr.refresh()
             stdscr.getch()
 
+def get_phase_from_db():
+    connection = connect_to_db()
+    if not connection:
+        return []
+    
+    try:
+        with connection.cursor() as cursor:
+            query = "SELECT DISTINCT idFase, nome FROM Fase"
+            cursor.execute(query)
+            phases = [Fase(id_phase=row[0], name=row[1]) for row in cursor.fetchall()]
+        return phases
+    except Exception as e:
+        print(f"Erro ao executar consulta: {e}")
+        return []
+    finally:
+        connection.close()
+
 
 def choose_phase(stdscr):
     """Exibe a tela para o jogador escolher a fase."""
 
-    #Fazer chamada sql para consultar quais fases o jogador pode escolher
+    phases = get_phase_from_db()
+
+    if not phases:
+        stdscr.addstr(0, 0, "Nenhuma fase disponível no banco de dados!")
+        stdscr.refresh()
+        stdscr.getch()
+        return None
+
+    curses.curs_set(0)
     stdscr.clear()
-    stdscr.addstr(0, 0, "Escolha a fase:")
-    stdscr.addstr(1, 0, "[1] Floresta Tal Tal")
-    stdscr.addstr(2, 0, "[2] Deserto")
-    stdscr.addstr(3, 0, "[3] Montanha")
-    stdscr.addstr(5, 0, "Pressione o número correspondente à fase.")
+    stdscr.addstr(0, 0, "Escolha em qual fase entrar:")
+
+    for i, phase in enumerate(phases):
+        stdscr.addstr(i + 1, 0, f"[{i}] {phase.name}")
+
+    stdscr.addstr(len(phases) + 2, 0, "Pressione o número correspondente para escolher.")
     stdscr.refresh()
 
     while True:
         key = stdscr.getch()
-        if key == ord('1'):
-            return '1'
-        elif key == ord('2'):
-            return '2'
-        elif key == ord('3'):
-            return '3'
+        if ord('1') <= key < ord('1') + len(phases):
+            chosen_index = key - ord('1')
+            return phases[chosen_index]
+        
+
+def initial_local_by_phase(id_phase):
+    connection = connect_to_db()
+    if not connection:
+        return []
+    
+    try:
+        with connection.cursor() as cursor:
+            query = "SELECT nome, descricao FROM Local WHERE idFase = %s"
+            cursor.execute(query, (id_phase,))
+            locais = cursor.fetchall()
+
+        if not locais:
+            return f"Nemhum local encontrado para a fase com idFase = {id_phase}."
+        
+        local_aleatorio = random.choice(locais)
+        nome_local, descricao_local = local_aleatorio
+        local = Local(name=nome_local, description=descricao_local)
+
+        return local
+    except Exception as e:
+        print(f"Erro ao executar consulta: {e}")
+        return []
+    finally:
+        connection.close()
+
+
+def get_characters_from_db():
+    connection = connect_to_db()
+    if not connection:
+        return []
+    
+    try:
+        with connection.cursor() as cursor:
+            query = "SELECT tipo FROM Jogador"
+            cursor.execute(query)
+            characters = [row[0] for row in cursor.fetchall()]
+        return characters
+    except Exception as e:
+        print(f"Erro ao executar consulta: {e}")
+        return []
+    finally:
+        connection.close()
 
 
 def choose_character(stdscr):
     """Exibe a tela para o jogador escolher o personagem."""
 
-    #Fazer chamada sql para consultar quais personagens o jogador pode esocolher
+    characters = get_characters_from_db()
+
+    if not characters:
+        stdscr.addstr(0, 0, "Nenhum personagem disponível no banco de dados!")
+        stdscr.refresh()
+        stdscr.getch()
+        return None
+
     curses.curs_set(0)
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha seu personagem:")
-    stdscr.addstr(1, 0, "[M] Mario")
-    stdscr.addstr(2, 0, "[L] Luigi")
-    stdscr.addstr(4, 0, "Pressione a tecla correspondente (M ou L) para começar.")
+
+    for i, character in enumerate(characters):
+        stdscr.addstr(i + 1, 0, f"[{i}] {character}")
+
+    stdscr.addstr(len(characters) + 2, 0, "Pressione o número correspondente para escolher.")
     stdscr.refresh()
 
     while True:
         key = stdscr.getch()
-        if key == ord('m') or key == ord('M'):
-            return "M"
-        elif key == ord('l') or key == ord('L'):
-            return "L"
+        if ord('1') <= key < ord('1') + len(characters):
+            chosen_index = key - ord('1')
+            return characters[chosen_index]
 
 def exploration_local(stdscr, local_phase, character):
     stdscr.clear()
-    stdscr.addstr(0, 0, "Escolha uma direção para se mover (sul, norte):")
+    stdscr.addstr(0, 0, "Escolha uma direção para se mover (setas para mover):")
     stdscr.refresh()
 
-    direction = stdscr.getkey()
-    if direction in ["up", "down"]:
-        new_local, encounter = move_player(local_phase, direction, character) # vai moter o jogador de local e retorna o que foi encontrado
+    direction = stdscr.getch()
+    new_local = local_phase
+    encounter = None
 
+    if direction == curses.KEY_UP:
+        new_local, encounter = move_player(local_phase, "norte", character) 
+    elif direction == curses.KEY_DOWN:
+        new_local, encounter = move_player(local_phase, "sul", character) 
+    elif direction == curses.KEY_LEFT:
+        new_local, encounter = move_player(local_phase, "esquerda", character)
+    elif direction == curses.KEY_RIGHT:
+        new_local, encounter = move_player(local_phase, "direita", character)
     else:
         stdscr.addstr(3, 0, "Direção inválida")
-        encounter = None
+    
     stdscr.refresh()
     stdscr.getch()
 
