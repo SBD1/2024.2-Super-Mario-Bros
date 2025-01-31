@@ -1,3 +1,6 @@
+from db import connect_to_db
+import curses
+
 class Local:
     def __init__(self, id_local, name, description):
         self.id_local = id_local

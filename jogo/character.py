@@ -1,3 +1,6 @@
+import curses
+from db import connect_to_db
+
 def get_characters_from_db():
     connection = connect_to_db()
     if not connection:
@@ -32,7 +35,7 @@ def choose_character(stdscr):
     stdscr.addstr(0, 0, "Escolha seu personagem:")
 
     for i, character in enumerate(characters):
-        stdscr.addstr(i + 1, 0, f"[{i}] {character}")
+        stdscr.addstr(i + 1, 0, f"[{i + 1}] {character}")
 
     stdscr.addstr(len(characters) + 2, 0, "Pressione o número correspondente para escolher.")
     stdscr.refresh()

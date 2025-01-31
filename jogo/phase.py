@@ -1,3 +1,6 @@
+from db import connect_to_db
+import curses
+
 class Fase:
     def __init__(self, id_phase, name):
         self.id_phase = id_phase
