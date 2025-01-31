@@ -41,7 +41,7 @@ def choose_phase(stdscr):
     stdscr.addstr(0, 0, "Escolha em qual fase entrar:")
 
     for i, phase in enumerate(phases):
-        stdscr.addstr(i + 1, 0, f"[{i}] {phase.name}")
+        stdscr.addstr(i + 1, 0, f"[{i + 1}] {phase.name}")
 
     stdscr.addstr(len(phases) + 2, 0, "Pressione o número correspondente para escolher.")
     stdscr.refresh()
