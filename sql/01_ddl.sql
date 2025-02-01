@@ -105,8 +105,6 @@ CREATE TABLE Inimigo (
     FOREIGN KEY (idPersonagem) REFERENCES Personagem(idPersonagem)
 );
 
-
-
 CREATE TABLE Inventario (
     idInventario SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,

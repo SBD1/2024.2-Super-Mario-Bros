@@ -1,3 +1,7 @@
+import curses
+import random
+import time
+
 
 class Instancia:
     def __init__(self, id_personagem, vidaAtual, moedaAtual, pontosAtual):

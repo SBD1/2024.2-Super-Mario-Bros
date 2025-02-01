@@ -46,9 +46,10 @@ def init_game(stdscr):
 
     while character.vida != 0:
         encounter = get_encounter_by_local(local_phase)
-        player_turn(stdscr, character, encounter)
+        if encounter:
+            player_turn(stdscr, character, encounter)
 
-        local_phase, encounter = exploration_local(stdscr, local_phase, character.id)
+        local_phase, encounter = exploration_local(stdscr, phase.id_phase, local_phase, character.id)
         if encounter:
             player_turn(stdscr, character, encounter)
 

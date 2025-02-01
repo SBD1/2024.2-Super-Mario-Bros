@@ -15,7 +15,7 @@ def initial_local_by_phase(id_phase):
     
     try:
         with connection.cursor() as cursor:
-            query = "SELECT nome, descricao FROM Local WHERE idFase = %s"
+            query = "SELECT idLocal, nome, descricao FROM Local WHERE idFase = %s"
             cursor.execute(query, (id_phase,))
             locais = cursor.fetchall()
 
@@ -23,8 +23,8 @@ def initial_local_by_phase(id_phase):
             return f"Nenhum local encontrado para a fase com idFase = {id_phase}."
         
         local_aleatorio = random.choice(locais)
-        nome_local, descricao_local = local_aleatorio
-        local = Local(name=nome_local, description=descricao_local)
+        id_local, nome_local, descricao_local = local_aleatorio
+        local = Local(id_local=id_local, name=nome_local, description=descricao_local)
 
         return local
     except Exception as e:
@@ -44,16 +44,16 @@ def exploration_local(stdscr, id_phase, local_phase, id_character):
     encounter = None
 
     if direction == curses.KEY_UP:
-        new_local = move_player_by_direction(id_phase, "sul", id_character) 
+        new_local = move_player_by_direction("sul", id_phase, id_character) 
         encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_DOWN:
-        new_local = move_player_by_direction(id_phase, "norte", id_character) 
+        new_local = move_player_by_direction("norte", id_phase, id_character) 
         encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_LEFT:
-        new_local = move_player_by_direction(id_phase, "oeste", id_character)
+        new_local = move_player_by_direction("oeste", id_phase, id_character)
         encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_RIGHT:
-        new_local = move_player_by_direction(id_phase, "leste", id_character)
+        new_local = move_player_by_direction("leste", id_phase, id_character)
         encounter = get_encounter_by_local(new_local)
     else:
         stdscr.addstr(3, 0, "Direção inválida")
@@ -81,11 +81,11 @@ def move_player_by_direction(direction, id_phase, id_character):
         id_local, nome_local, descricao_local = local_aleatorio
 
         with connection.cursor() as cursor:
-            update_query = "UPDATE Jogador SET idLocal = %s WHERE idJogador = %s"
+            update_query = "UPDATE Personagem SET idLocal = %s WHERE idPersonagem = %s"
             cursor.execute(update_query, (id_local, id_character))
             connection.commit()
 
-        local = Local(id=id_local, name=nome_local, description=descricao_local)
+        local = Local(id_local=id_local, name=nome_local, description=descricao_local)
 
         return local
     except Exception as e:
@@ -117,7 +117,7 @@ def get_encounter_by_local(local_phase):
 
         if id_personagem:
             with connection.cursor() as cursor:
-                query_tipo = "SELECT tipo FROM Personagem WHERE idPersonagem = %s"
+                query_tipo = "SELECT tipojogador FROM Personagem WHERE idPersonagem = %s"
                 cursor.execute(query_tipo, (id_personagem,))
                 tipo_result = cursor.fetchone()
                 if tipo_result:

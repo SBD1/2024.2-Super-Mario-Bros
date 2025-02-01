@@ -74,47 +74,70 @@ def choose_character(stdscr):
 def player_turn(stdcsr, player, encounter):
     while True:
         stdcsr.clear()
-        
-        if encounter['Personagem'] is not None:
-            stdcsr.addstr(0, 0, "Você encontrou inimigos! Se prepare para o combate.")
-            mario_battle_turn(stdscr, player)  # Iniciar a batalha com o personagem escolhido
+        row = 0
 
-        if encounter['Loja'] is not None:
-            stdcsr.addstr(0, 0, "Você encontrou uma loja!")
-            stdcsr.addstr(0, 1, "[1] Comprar")
-            stdcsr.addstr(0, 2, "[2] Vender")
+        if encounter.get('Personagem') is not None:
+            if encounter.get('Personagem').get('tipo') == 'NPC':
+                stdcsr.addstr(row, 0, "Você encontrou um NPC")
+                row += 1
+                stdcsr.addstr(row, 0, "[1] Conversar")
+                row += 1
+                stdcsr.addstr(row, 0, "[2] Ignorar")
+            else:
+                stdcsr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
+                stdcsr.refresh()
+                stdcsr.getch() 
+                mario_battle_turn(stdcsr, player)
 
-        if encounter['Bloco'] is not None:
-            stdcsr.addstr(0, 0, "Você encontrou uma blocos!")
-            stdcsr.addstr(0, 1, "[1] Bater no bloco")
-            stdcsr.addstr(0, 2, "[2] Ignora bloco")
+        row += 1  # Avança a linha
 
-        if encounter['Loja'] is not None:
-            print('fazer')
+        if encounter.get('Loja') is not None:
+            stdcsr.addstr(row, 0, "Você encontrou uma loja!")
+            row += 1
+            stdcsr.addstr(row, 0, "[1] Comprar")
+            row += 1
+            stdcsr.addstr(row, 0, "[2] Vender")
+
+        if encounter.get('Bloco') is not None:
+            stdcsr.addstr(row, 0, "Você encontrou um bloco!")
+            row += 1
+            stdcsr.addstr(row, 0, "[1] Bater no bloco")
+            row += 1
+            stdcsr.addstr(row, 0, "[2] Ignorar bloco")
+
+        if encounter.get('CheckPoint!') is not None:
+            stdcsr.addstr(row, 0, "Você encontrou um CheckPoint!")
+            row += 1
+            stdcsr.addstr(row, 0, "CheckPoint Ativado!")
+            active_checkpoint(player)  # Ativa o checkpoint para o jogador
 
         stdcsr.refresh()
         choice = stdcsr.getkey()
 
         if choice == "1":
-            if encounter == "loja":
-                print("Fazer interação de comprar algo da loja")
-            elif encounter == "blocos":
-                print("Fazer interação de bater no bloco")
-            elif encounter == "cano":
-                print("Fazer interação de entrar no cano")
-            elif encounter == "npc":
-                print("Fazer interação de conversar com npc")
-        elif choice == "1":
-            if encounter == "loja":
-                print("Fazer interação de vender algo da loja")
-            elif encounter == "blocos":
-                print("Fazer interação de ignorar bloco")
-            elif encounter == "cano":
-                print("Fazer interação de ignorar cano")
-            elif encounter == "npc":
-                print("Fazer interação de ignorar npc")
+            if encounter.get('Loja') is not None:
+                stdcsr.addstr(row + 2, 0, "Você escolheu comprar algo da loja.")
+                itens = get_shop_itens(encounter.get('Loja'))
+
+            elif encounter.get('Bloco') is not None:
+                stdcsr.addstr(row + 2, 0, "Você bateu no bloco.")
+                item = get_block_item(encounter.get('Bloco'))
+
+        elif choice == "2":
+            if encounter.get('Loja') is not None:
+                stdcsr.addstr(row + 2, 0, "Você escolheu vender algo da loja.")
+                itens = get_inventario_itens(player.id)
+                # Fazer a interação de tirar o item do inventário e vender para ganhar moedas
+            elif encounter.get('Bloco') is not None:
+                stdcsr.addstr(row + 2, 0, "Você ignorou o bloco.")
+
         else:
-            stdcsr.addstr(4, 0, "Escolha inválida. Tente novamente.")
+            stdcsr.addstr(row + 2, 0, "Escolha inválida. Tente novamente.")
 
         stdcsr.refresh()
-        stdcsr.gettch()
+        stdcsr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop
+
+def active_checkpoint(player):
+    player.last_checkpoint = player.position.copy()  # Salva a posição do jogador no último checkpoint
+    player.health = player.max_health  # Restaura o hp completo do jogador
+    
