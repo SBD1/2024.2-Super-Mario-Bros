@@ -1,9 +1,10 @@
 from db import connect_to_db
 import curses
+import random
 
 class Local:
     def __init__(self, id_local, name, description):
-        self.id_local = id_local
+        self.id = id_local
         self.name = name
         self.description = description
 
@@ -19,7 +20,7 @@ def initial_local_by_phase(id_phase):
             locais = cursor.fetchall()
 
         if not locais:
-            return f"Nemhum local encontrado para a fase com idFase = {id_phase}."
+            return f"Nenhum local encontrado para a fase com idFase = {id_phase}."
         
         local_aleatorio = random.choice(locais)
         nome_local, descricao_local = local_aleatorio
@@ -33,7 +34,7 @@ def initial_local_by_phase(id_phase):
         connection.close()
 
 
-def exploration_local(stdscr, local_phase, character):
+def exploration_local(stdscr, id_phase, local_phase, id_character):
     stdscr.clear()
     stdscr.addstr(0, 0, "Escolha uma direção para se mover (setas para mover):")
     stdscr.refresh()
@@ -43,29 +44,99 @@ def exploration_local(stdscr, local_phase, character):
     encounter = None
 
     if direction == curses.KEY_UP:
-        new_local, encounter = move_player(local_phase, "norte", character) 
+        new_local = move_player_by_direction(id_phase, "sul", id_character) 
+        encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_DOWN:
-        new_local, encounter = move_player(local_phase, "sul", character) 
+        new_local = move_player_by_direction(id_phase, "norte", id_character) 
+        encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_LEFT:
-        new_local, encounter = move_player(local_phase, "esquerda", character)
+        new_local = move_player_by_direction(id_phase, "oeste", id_character)
+        encounter = get_encounter_by_local(new_local)
     elif direction == curses.KEY_RIGHT:
-        new_local, encounter = move_player(local_phase, "direita", character)
+        new_local = move_player_by_direction(id_phase, "leste", id_character)
+        encounter = get_encounter_by_local(new_local)
     else:
         stdscr.addstr(3, 0, "Direção inválida")
     
     stdscr.refresh()
     stdscr.getch()
 
-    return new_local, 
-
-def move_player(local_phase, direction, character):
-    if direction == "norte":
-        new_local = get_local_phase_by_direction()
-        encounter = get_encount_by_direction()
-    if direction == "sul":
-        new_local = get_local_phase_by_direction()        
-        encounter = get_encount_by_direction()
-    
-    # Atualizar em sql a nova posição do jogador 
-
     return new_local, encounter
+
+def move_player_by_direction(direction, id_phase, id_character):
+    connection = connect_to_db()
+    if not connection:
+        return []
+    
+    try:
+        with connection.cursor() as cursor:
+            query = "SELECT idLocal, nome, descricao FROM Local WHERE idFase = %s AND regiao = %s"
+            cursor.execute(query, (id_phase, direction))
+            locais = cursor.fetchall()
+
+        if not locais:
+            return f"Nenhum local encontrado para a fase com idFase = {id_phase}."
+        
+        local_aleatorio = random.choice(locais)
+        id_local, nome_local, descricao_local = local_aleatorio
+
+        with connection.cursor() as cursor:
+            update_query = "UPDATE Jogador SET idLocal = %s WHERE idJogador = %s"
+            cursor.execute(update_query, (id_local, id_character))
+            connection.commit()
+
+        local = Local(id=id_local, name=nome_local, description=descricao_local)
+
+        return local
+    except Exception as e:
+        print(f"Erro ao executar consulta: {e}")
+        return []
+    finally:
+        connection.close()
+
+def get_encounter_by_local(local_phase):
+    connection = connect_to_db()
+    if not connection:
+        return None
+    
+    try:
+        with connection.cursor() as cursor:
+            query = """
+                SELECT idBloco, idPersonagem, idLoja, idCheckpoint
+                FROM Local
+                WHERE idLocal = %s
+            """
+            cursor.execute(query, (local_phase.id,))
+            result = cursor.fetchone()
+
+        if not result:
+            return f"Nenhuma entidade encontrada no local {local_phase.nome}."
+        
+        id_bloco, id_personagem, id_loja, id_checkpoint = result
+        tipo_personagem = None
+
+        if id_personagem:
+            with connection.cursor() as cursor:
+                query_tipo = "SELECT tipo FROM Personagem WHERE idPersonagem = %s"
+                cursor.execute(query_tipo, (id_personagem,))
+                tipo_result = cursor.fetchone()
+                if tipo_result:
+                    tipo_personagem = tipo_result[0]
+
+        encounter = {
+            "Bloco": id_bloco if id_bloco else None,
+            "Personagem": {
+                "id": id_personagem,
+                "tipo": tipo_personagem
+            } if id_personagem else None,
+            "Loja": id_loja if id_loja else None,
+            "Checkpoint": id_checkpoint if id_checkpoint else None,
+        }
+
+        return encounter
+
+    except Exception as e:
+        print(f"Erro ao buscar entidades do local: {e}")
+        return None
+    finally:
+        connection.close()

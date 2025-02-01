@@ -1,27 +1,11 @@
 -- Conecta ao banco supermario
 \c supermario;
 
---- Insere inimigos na tabela Inimigo ---
-INSERT INTO Inimigo (tipo) VALUES 
-('Goomba'),
-('Koopa Troopa'),
-('Boo'),
-('Thwomp'),
-('Dry Bones'),
-('Chain Chomp'),
-('Boohemoth');
-
---- Insere canos na tabela Cano ---
-INSERT INTO Cano (idDestino) VALUES 
-('Mundo 1-1'),
-('Mundo 2-2'),
-('Mundo 3-3');
-
 --- Insere mundos na tabela Mundo ---
-INSERT INTO Mundo (nome, descrição, nivel, idCano) VALUES 
-('Mundo 1', 'Um mundo inicial cheio de novas aventuras.', 1, 1),
-('Mundo 2', 'Um mundo aquático cheio de dificuldades.', 2, 2),
-('Mundo 3', 'Um mundo de lava com perigos por todos os lados.', 3, 3);
+INSERT INTO Mundo (nome, descrição, nivel) VALUES 
+('Mundo 1', 'Um mundo inicial cheio de novas aventuras.', 1),
+('Mundo 2', 'Um mundo aquático cheio de dificuldades.', 2),
+('Mundo 3', 'Um mundo de lava com perigos por todos os lados.', 3);
 
 --- Insere fases na tabela Fase ---
 INSERT INTO Fase (nome, nivel, idMundo) VALUES 
@@ -30,75 +14,97 @@ INSERT INTO Fase (nome, nivel, idMundo) VALUES
 ('Fase 3', 3, 3);
 
 --- Insere locais na tabela Local para cada fase ---
-INSERT INTO Local (nome, descricao, idFase) VALUES 
-('Castelo do Bowser', 'Um castelo cheio de lava e armadilhas.', 3),
-('Campos do Reino', 'Um campo verde com muitos Goombas.', 1),
-('Caverna Aquática', 'Um local submerso com peixes hostis.', 2),
-('Deserto das Dunas', 'Um vasto deserto cheio de armadilhas.', 3),
-('Floresta Perdida', 'Uma floresta cheia de segredos ocultos.', 2),
-('Montanhas Congeladas', 'Um local coberto de neve e gelo.', 1),
-('Praia Ensolarada', 'Um local relaxante com perigos inesperados.', 3);
+INSERT INTO Local (nome, regiao, descricao, idFase) VALUES
+('Castelo do Bowser', 'Região 1', 'Um castelo cheio de lava e armadilhas.', 3),
+('Campos do Reino', 'Região 2', 'Um campo verde com muitos Goombas.', 1),
+('Caverna Aquática', 'Região 3', 'Um local submerso com peixes hostis.', 2),
+('Deserto das Dunas', 'Região 4', 'Um vasto deserto cheio de armadilhas.', 3),
+('Floresta Perdida', 'Região 5', 'Uma floresta cheia de segredos ocultos.', 2),
+('Montanhas Congeladas', 'Região 6', 'Um local coberto de neve e gelo.', 1),
+('Praia Ensolarada', 'Região 7', 'Um local relaxante com perigos inesperados.', 3);
 
---- Insere blocos na tabela Bloco ---
-INSERT INTO Bloco (tipo, idLocal) VALUES 
-('Bloco de Yoshi', 1),
-('Bloco de Moedas', 2),
-('Bloco de Vida Extra', 1),
-('Bloco de Cogumelo', 3),
-('Bloco de Yoshi', 2),
-('Bloco de Moedas', 5),
-('Bloco de Moedas', 6),
-('Bloco de Flor de Fogo', 4),
-('Bloco de Yoshi', 7),
-('Bloco de Estrela', 4);
-
---- Insere Yoshis na tabela Yoshi ---
-INSERT INTO Yoshi (nome, idBloco) VALUES 
-('Yoshi Verde', 5),
-('Yoshi Azul', 9),
-('Yoshi Vermelho', 1);
-
---- Insere moedas na tabela Moeda ---
-INSERT INTO Moeda (valor, idBloco) VALUES 
-(1, 2),
-(5, 6),
-(10, 7);
-
---- Insere lojas na tabela Loja ---
-INSERT INTO Loja (nome, idLocal) VALUES 
-('Loja do Toad', 3),
-('Loja do Yoshi', 5),
-('Loja de Itens Raros', 7);
-
---- Insere itens na tabela Item ---
-INSERT INTO Item (tipo, efeito, duração, raridade, idBloco) VALUES 
-('Cogumelo', 'Aumenta tamanho', 60, 'Comum', 4),
-('Flor de Fogo', 'Atira bolas de fogo', 30, 'Raro', 8),
-('Estrela', 'Invencibilidade', 10, 'Muito Raro', 10);
 
 --- Insere personagens na tabela Personagem ---
-INSERT INTO Personagem (nome, vida, dano, pontos, idLocal) VALUES 
-('Toadette', 100, 10, 0, 6),
-('Shy Guy', 100, 8, 0, 2),
-('Donkey Kong', 100, 5, 0, 3);
+INSERT INTO Personagem (nome, vida, dano, pontos, idLocal, tipoJogador) VALUES 
+('Toadette', 100, 10, 0, 6, 'Jogador'),
+('Mario', 100, 10, 0, 6, 'Jogador'),
+('Luigi', 100, 5, 0, 3, 'Jogador'),
+('Shy Guy', 100, 8, 0, 2, 'Inimigo'),
+('Goomba', 30, 5, 0, 1, 'Inimigo'),
+('Koopa Troopa', 40, 6, 0, 1, 'Inimigo'),
+('Boo', 25, 4, 0, 1, 'Inimigo'),
+('Thwomp', 50, 10, 0, 1, 'Inimigo'),
+('Dry Bones', 35, 7, 0, 1, 'Inimigo'),
+('Chain Chomp', 60, 12, 0, 1, 'Inimigo'),
+('Boohemoth', 70, 15, 0, 1, 'Inimigo');
+
+--- Insere jogadores na tabela Jogador ---
+INSERT INTO Jogador (moeda, idInventario, idYoshi) VALUES 
+(100, 1, 1),
+(50, 2, 2),
+(75, 3, 3);
+
+--- Insere inimigos na tabela Inimigo ---
+INSERT INTO Inimigo (idPersonagem, tipo, habilidade) VALUES 
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Goomba'), 'Goomba', 'Atacar'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Koopa Troopa'), 'Koopa Troopa', 'Defender'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Boo'), 'Boo', 'Atacar'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Thwomp'), 'Thwomp', 'Atacar'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Dry Bones'), 'Dry Bones', 'Defender'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Chain Chomp'), 'Chain Chomp', 'Atacar'),
+((SELECT idPersonagem FROM Personagem WHERE nome = 'Boohemoth'), 'Boohemoth', 'Atacar');
+
+--- Insere itens na tabela Item ---
+INSERT INTO Item (tipo, efeito, duração, raridade) VALUES 
+('Cogumelo', 'Aumenta tamanho', 60, 'Comum'),
+('Flor de Fogo', 'Atira bolas de fogo', 30, 'Raro'),
+('Estrela', 'Invencibilidade', 10, 'Muito Raro');
+
+--- Insere blocos na tabela Bloco ---
+INSERT INTO Bloco (tipo) VALUES 
+('Bloco de Yoshi'),
+('Bloco de Moedas'),
+('Bloco de Vida Extra'),
+('Bloco de Cogumelo'),
+('Bloco de Yoshi'),
+('Bloco de Moedas'),
+('Bloco de Moedas'),
+('Bloco de Flor de Fogo'),
+('Bloco de Yoshi'),
+('Bloco de Estrela');
+
+
+--- Insere Yoshis na tabela Yoshi ---
+INSERT INTO Yoshi (nome) VALUES 
+('Yoshi Verde'),
+('Yoshi Azul'),
+('Yoshi Vermelho');
+
+--- Insere moedas na tabela Moeda ---
+INSERT INTO Moeda (valor) VALUES 
+(1),
+(5),
+(10);
+
+--- Insere lojas na tabela Loja ---
+INSERT INTO Loja (nome) VALUES 
+('Loja do Toad'),
+('Loja do Yoshi'),
+('Loja de Itens Raros');
+
 
 --- Insere checkpoints na tabela Checkpoint ---
-INSERT INTO Checkpoint (pontuação, idLocal) VALUES 
-(100, 6),
-(200, 3),
-(300, 7);
+INSERT INTO Checkpoint (pontuação) VALUES 
+(100),
+(200),
+(300);
 
 --- Insere inventários na tabela Inventario ---
-INSERT INTO Inventario (quantidade, IdItem) VALUES 
+INSERT INTO Inventario (quantidade, idItem) VALUES 
 (5, 1),
 (3, 2),
 (7, 3);
 
---- Insere jogadores na tabela Jogador ---
-INSERT INTO Jogador (tipo, moeda, idInventario, idYoshi) VALUES 
-('Mario', 100, 1, 1),
-('Luigi', 50, 2, 2),
-('Peach', 75, 3, 3);
 
 --- Insere instâncias na tabela Instancia ---
 INSERT INTO Instancia (vidaAtual, moedaAtual, idJogador) VALUES 

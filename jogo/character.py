@@ -1,5 +1,12 @@
 import curses
 from db import connect_to_db
+from battle import mario_battle_turn
+
+class Character:
+    def __init__(self, id_character, name, vida):
+        self.id = id_character
+        self.name = name
+        self.vida = vida
 
 def get_characters_from_db():
     connection = connect_to_db()
@@ -8,10 +15,28 @@ def get_characters_from_db():
     
     try:
         with connection.cursor() as cursor:
-            query = "SELECT tipo FROM Jogador"
+            query = """
+            SELECT p.idpersonagem, p.nome, p.vida, p.dano, p.pontos, p.idLocal, p.tipojogador
+            FROM personagem p
+            JOIN jogador j ON p.idpersonagem = j.idpersonagem
+            WHERE p.tipojogador = 'Jogador'
+            """
             cursor.execute(query)
-            characters = [row[0] for row in cursor.fetchall()]
-        return characters
+            characters = cursor.fetchall()
+
+        if not characters:
+            return "Nenhum jogador disponível para escolha."
+
+        characters_list = [
+            Character(
+                id_character=character[0],
+                name=character[1], 
+                vida=character[2]
+            )
+            for character in characters
+        ]
+    
+        return characters_list
     except Exception as e:
         print(f"Erro ao executar consulta: {e}")
         return []
@@ -35,7 +60,7 @@ def choose_character(stdscr):
     stdscr.addstr(0, 0, "Escolha seu personagem:")
 
     for i, character in enumerate(characters):
-        stdscr.addstr(i + 1, 0, f"[{i + 1}] {character}")
+        stdscr.addstr(i + 1, 0, f"[{i + 1}] {character.name} - Vida: {character.vida}")
 
     stdscr.addstr(len(characters) + 2, 0, "Pressione o número correspondente para escolher.")
     stdscr.refresh()
@@ -50,25 +75,22 @@ def player_turn(stdcsr, player, encounter):
     while True:
         stdcsr.clear()
         
-        if encounter == "Combat":
+        if encounter['Personagem'] is not None:
             stdcsr.addstr(0, 0, "Você encontrou inimigos! Se prepare para o combate.")
-            mario_battle_turn(stdscr, player)  # Iniciar o jogo com o personagem escolhido
-        elif encounter == "loja":
+            mario_battle_turn(stdscr, player)  # Iniciar a batalha com o personagem escolhido
+
+        if encounter['Loja'] is not None:
             stdcsr.addstr(0, 0, "Você encontrou uma loja!")
             stdcsr.addstr(0, 1, "[1] Comprar")
             stdcsr.addstr(0, 2, "[2] Vender")
-        elif encounter == "blocos":
+
+        if encounter['Bloco'] is not None:
             stdcsr.addstr(0, 0, "Você encontrou uma blocos!")
             stdcsr.addstr(0, 1, "[1] Bater no bloco")
             stdcsr.addstr(0, 2, "[2] Ignora bloco")
-        elif encounter == "cano":
-            stdcsr.addstr(0, 0, "Você encontrou uma cano!")
-            stdcsr.addstr(0, 1, "[1] Tentar entrar no cano")
-            stdcsr.addstr(0, 2, "[2] Ignorar cano")
-        elif encounter == "npc":
-            stdcsr.addstr(0, 0, "Você encontrou um npc!")
-            stdcsr.addstr(0, 1, "[1] Conversar com npc")
-            stdcsr.addstr(0, 2, "[2] Ignorar npc")
+
+        if encounter['Loja'] is not None:
+            print('fazer')
 
         stdcsr.refresh()
         choice = stdcsr.getkey()

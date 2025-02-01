@@ -1,3 +1,15 @@
+
+class Instancia:
+    def __init__(self, id_personagem, vidaAtual, moedaAtual, pontosAtual):
+        self.id = id_personagem
+        self.vida = vidaAtual
+        self.moedas = moedaAtual
+        self.pontos = pontosAtual
+
+SCENARIO_WIDTH = 20
+OBSTACLE = "|"
+GROUND_LEVEL = 1  # Linha do chão
+
 def mario_battle_turn(stdscr, character):
     curses.curs_set(0)  # Ocultar o cursor
     stdscr.nodelay(1)   # Não bloquear para entrada

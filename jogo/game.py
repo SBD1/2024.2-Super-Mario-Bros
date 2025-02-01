@@ -1,8 +1,6 @@
-from character import choose_character
+from character import choose_character, player_turn
 from phase import choose_phase
-from local import initial_local_by_phase
-from local import exploration_local
-from character import player_turn
+from local import initial_local_by_phase, exploration_local, get_encounter_by_local
 from db import connect_to_db
 
 import curses
@@ -17,9 +15,6 @@ OBSTACLE = "|"
 GROUND_LEVEL = 1  # Linha do chão
 
 player = None
-
-
-
 
 def generate_scenario(obstacles):
     """Gera o cenário atual."""
@@ -36,7 +31,7 @@ def init_game(stdscr):
     
     curses.curs_set(0)
     stdscr.clear()
-    stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI")
+    stdscr.addstr(0, 0, "Bem-vindo ao Super Mario Bros CLI\n")
     stdscr.refresh()
     stdscr.getch()
 
@@ -49,16 +44,18 @@ def init_game(stdscr):
     stdscr.refresh()
     stdscr.getch()
 
-    while character:
-        local_phase, encounter = exploration_local(stdscr, local_phase, character)
-        if encounter:
-            player_turn(stdscr, player, encounter)
+    while character.vida != 0:
+        encounter = get_encounter_by_local(local_phase)
+        player_turn(stdscr, character, encounter)
 
-        if not character:        
-            stdscr.clear()
-            stdscr.addstr(0, 0, f"{character} foi derrotado")
-            stdscr.refresh()
-            stdscr.getch()
+        local_phase, encounter = exploration_local(stdscr, local_phase, character.id)
+        if encounter:
+            player_turn(stdscr, character, encounter)
+
+    stdscr.clear()
+    stdscr.addstr(0, 0, f"{character} foi derrotado")
+    stdscr.refresh()
+    stdscr.getch()
 
 
 # Inicia o jogo chamando `init_game`
