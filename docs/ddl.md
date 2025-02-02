@@ -19,7 +19,8 @@ CREATE TABLE Yoshi (
     nome VARCHAR(20) NOT NULL,
     idBloco INTEGER NOT NULL,
 
-    CONSTRAINT yoshi_pk PRIMARY KEY (idYoshi)
+    CONSTRAINT yoshi_pk PRIMARY KEY (idYoshi),
+    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco)
 );
 ```
 
@@ -39,7 +40,8 @@ CREATE TABLE Bloco (
     tipo VARCHAR(30) NOT NULL,
     idLocal INTEGER NOT NULL,
 
-    CONSTRAINT bloco_pk PRIMARY KEY (idBloco)
+    CONSTRAINT bloco_pk PRIMARY KEY (idBloco),
+    FOREIGN KEY (idLocal) REFERENCES Local(idLocal)
 );
 ```
 
@@ -77,10 +79,12 @@ CREATE TABLE Mundo (
     nome VARCHAR(50) NOT NULL,
     descrição TEXT,
     nivel INTEGER NOT NULL,
+    idCano INTEGER NOT NULL,
 
     CONSTRAINT mundo_pk PRIMARY KEY (idMundo),
-    FOREIGN KEY (nome) REFERENCES Cano(idCano)
+    FOREIGN KEY (idCano) REFERENCES Cano(idCano)
 );
+
 ```
 
 **Colunas:**
@@ -89,6 +93,7 @@ CREATE TABLE Mundo (
 - `nome`: Nome do mundo.
 - `descrição`: Detalhes descritivos sobre o mundo.
 - `nivel`: Nível associado ao mundo.
+- `idCano`: Referência ao cano associado.
 
 ### Fase
 
@@ -121,7 +126,6 @@ A tabela **Inventário** armazena informações sobre os itens em posse do jogad
 CREATE TABLE Inventário (
     idIventário SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,
-    idJogador INTEGER NOT NULL,
     IdItem INTEGER NOT NULL,
 
     CONSTRAINT inventário_pk PRIMARY KEY (idIventário)
@@ -132,7 +136,6 @@ CREATE TABLE Inventário (
 
 - `idIventário`: Identificador único do inventário (chave primária).
 - `quantidade`: Quantidade de itens.
-- `idJogador`: Referência ao jogador.
 - `IdItem`: Referência ao item.
 
 ### Inimigo
@@ -185,7 +188,7 @@ CREATE TABLE Loja (
     nome VARCHAR(50) NOT NULL,
     idLocal INTEGER NOT NULL,
 
-    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
+    CONSTRAINT loja_pk PRIMARY KEY (idLoja),
 );
 ```
 
