@@ -20,6 +20,8 @@ nav:
       - DQL: dql.md
       - Álgebra Relacional: algebra-relacional.md
       - Apresentação: apresentacao2.md
+  - Entrega 3:
+      - Triggers e Stored Procedures: triggers.md
 
 theme:
   name: material
