@@ -131,3 +131,4 @@ CREATE TABLE Instancia (
     idJogador INTEGER NOT NULL,
     CONSTRAINT instancia_pk PRIMARY KEY (idInstancia)
 );
+
