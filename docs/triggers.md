@@ -1,0 +1,3 @@
+## Introdução
+
+Triggers e Stored Procedures são mecanismos do banco de dados utilizados para automação e integridade dos dados. Triggers são gatilhos que executam ações automaticamente em resposta a eventos como inserções, atualizações ou exclusões em uma tabela, sendo úteis para auditoria, manutenção da integridade referencial e implementação de regras de negócio. Já Stored Procedures são conjuntos de comandos SQL armazenados no banco, que podem ser executados sob demanda para realizar operações complexas, otimizando o desempenho e reduzindo a redundância no código. Ambos contribuem para a segurança, eficiência e organização da lógica de negócios no banco de dados.
