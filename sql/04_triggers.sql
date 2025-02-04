@@ -1,25 +1,5 @@
 \c supermario;
 
-CREATE OR REPLACE FUNCTION atualizar_vida() RETURNS TRIGGER AS $$ 
-BEGIN
-    -- A vida máxima será o nível multiplicado por 100
-    IF NEW.vida > (NEW.nivel * 100) THEN
-        NEW.vida := (NEW.nivel * 100);  -- Limita a vida ao valor máximo
-    END IF;
-
-    -- Se a vida for menor que o mínimo, ajusta para 0
-    IF NEW.vida < 0 THEN
-        NEW.vida := 0;  -- A vida não pode ser negativa
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_atualizar_vida
-BEFORE UPDATE ON personagem
-FOR EACH ROW
-EXECUTE FUNCTION atualizar_vida();
 
 -- 2. Se a vida do personagem chegar a 0, ele perde pontos
 
