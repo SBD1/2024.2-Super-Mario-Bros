@@ -13,14 +13,33 @@ INSERT INTO Fase (nome, nivel, idMundo) VALUES
 ('Fase 2', 2, 2),
 ('Fase 3', 3, 3);
 
+--- Insere Yoshis na tabela Yoshi ---
+INSERT INTO Yoshi (nome) VALUES 
+('Yoshi Verde'),
+('Yoshi Azul'),
+('Yoshi Vermelho');
+
+--- Insere moedas na tabela Moeda ---
+INSERT INTO Moeda (valor) VALUES 
+(1),
+(5),
+(10);
+
+--- Insere itens na tabela Item ---
+INSERT INTO Item (tipo, efeito, duração, raridade) VALUES 
+('Cogumelo', 'Aumenta tamanho', 60, 'Comum'),
+('Flor de Fogo', 'Atira bolas de fogo', 30, 'Raro'),
+('Estrela', 'Invencibilidade', 10, 'Muito Raro');
+
 --- Insere blocos na tabela Bloco ---
-INSERT INTO Bloco (tipo) VALUES 
-('Bloco de Yoshi'),
-('Bloco de Moedas'),
-('Bloco de Vida Extra'),
-('Bloco de Cogumelo'),
-('Bloco de Flor de Fogo'),
-('Bloco de Estrela');
+INSERT INTO Bloco (tipo, iditem, idyoshi, idmoeda) VALUES 
+('Bloco de Yoshi', NULL, 1, NULL),  -- Bloco de Yoshi - Referencia o Yoshi Verde
+('Bloco de Moedas', NULL, NULL, 1),  -- Bloco de Moedas - Referencia a Moeda de valor 1
+('Bloco de Vida Extra', 1, NULL, NULL),  -- Bloco de Vida Extra - Referencia o Item Cogumelo
+('Bloco de Cogumelo', 1, NULL, NULL),  -- Bloco de Cogumelo - Referencia o Item Cogumelo
+('Bloco de Flor de Fogo', 2, NULL, NULL),  -- Bloco de Flor de Fogo - Referencia o Item Flor de Fogo
+('Bloco de Estrela', 3, NULL, NULL);  -- Bloco de Estrela - Referencia o Item Estrela
+
 
 -- Insere locais na tabela Local para cada fase
 INSERT INTO Local (nome, regiao, descricao, idFase, idBloco, idPersonagem, idLoja, idCheckpoint) VALUES
@@ -59,26 +78,6 @@ INSERT INTO Inimigo (idPersonagem, tipo, habilidade) VALUES
 ((SELECT idPersonagem FROM Personagem WHERE nome = 'Chain Chomp'), 'Chain Chomp', 'Atacar'),
 ((SELECT idPersonagem FROM Personagem WHERE nome = 'Boohemoth'), 'Boohemoth', 'Atacar');
 
---- Insere itens na tabela Item ---
-INSERT INTO Item (tipo, efeito, duração, raridade) VALUES 
-('Cogumelo', 'Aumenta tamanho', 60, 'Comum'),
-('Flor de Fogo', 'Atira bolas de fogo', 30, 'Raro'),
-('Estrela', 'Invencibilidade', 10, 'Muito Raro');
-
-
-
---- Insere Yoshis na tabela Yoshi ---
-INSERT INTO Yoshi (nome) VALUES 
-('Yoshi Verde'),
-('Yoshi Azul'),
-('Yoshi Vermelho');
-
---- Insere moedas na tabela Moeda ---
-INSERT INTO Moeda (valor) VALUES 
-(1),
-(5),
-(10);
-
 --- Insere lojas na tabela Loja ---
 INSERT INTO Loja (nome) VALUES 
 ('Loja do Toad'),
@@ -92,11 +91,12 @@ INSERT INTO Checkpoint (pontuação) VALUES
 (200),
 (300);
 
---- Insere inventários na tabela Inventario ---
-INSERT INTO Inventario (quantidade, idItem) VALUES 
-(5, 1),
-(3, 2),
-(7, 3);
+-- Inserindo itens no inventário de um personagem (idPersonagem = 1)
+INSERT INTO Inventario (quantidade, idItem, idPersonagem) VALUES 
+(5, 1, 1),  -- 5 unidades do item com idItem = 1 para o personagem 1
+(3, 2, 2),  -- 3 unidades do item com idItem = 2 para o personagem 1
+(7, 3, 3);  -- 7 unidades do item com idItem = 3 para o personagem 1
+
 
 
 --- Insere jogadores na tabela Jogador ---

@@ -71,11 +71,116 @@ def choose_character(stdscr):
             chosen_index = key - ord('1')
             return characters[chosen_index]
         
+def get_block_item(id_bloco, player):
+    """Retorna o item escondido dentro de um bloco e o adiciona ao inventário do jogador."""
+    connection = connect_to_db()
+    if not connection:
+        return "Erro ao conectar ao banco de dados."
+
+    try:
+        with connection.cursor() as cursor:
+            query = """
+            SELECT 
+                i.idItem AS id_item,  -- Agora retornando o idItem
+                i.tipo AS item, 
+                y.nome AS yoshi, 
+                m.valor AS moeda 
+            FROM Bloco b
+            LEFT JOIN Item i ON b.idItem = i.idItem
+            LEFT JOIN Yoshi y ON b.idYoshi = y.idYoshi
+            LEFT JOIN Moeda m ON b.idMoeda = m.idMoeda
+            WHERE b.idBloco = %s
+            """
+            cursor.execute(query, (id_bloco,))
+            result = cursor.fetchone()
+
+        if not result:
+            return "O bloco está vazio."
+
+        id_item, item, yoshi, moeda = result
+        if item:
+            item_name = item
+        elif yoshi:
+            item_name = f"Yoshi: {yoshi}"
+        elif moeda:
+            item_name = f"{moeda} moedas"
+        else:
+            return "O bloco está vazio."
+
+        # Definir a quantidade inicial (supondo que seja 1)
+        quantidade = 1
+
+        # Adiciona o idItem e a quantidade ao inventário do jogador
+        with connection.cursor() as cursor:
+            # Verifica se o jogador já possui o item no inventário
+            check_query = """
+            SELECT idInventario, quantidade
+            FROM Inventario
+            WHERE idItem = %s AND idpersonagem = %s
+            """
+            cursor.execute(check_query, (id_item, player.id))  # Garanta que 'player.id' esteja correto
+            existing_item = cursor.fetchone()
+
+            if existing_item:
+                # Se já existe, atualiza a quantidade
+                new_quantity = existing_item[1] + quantidade
+                update_query = """
+                UPDATE Inventario
+                SET quantidade = %s
+                WHERE idInventario = %s
+                """
+                cursor.execute(update_query, (new_quantity, existing_item[0]))
+            else:
+                # Se não existe, insere o novo item no inventário
+                insert_query = """
+                INSERT INTO Inventario (quantidade, idItem, idpersonagem)
+                VALUES (%s, %s, %s)  -- Aqui garantimos que 'idpersonagem' seja passado
+                """
+                cursor.execute(insert_query, (quantidade, id_item, player.id))  # Insira o id do personagem aqui
+
+            connection.commit()
+
+        return f" {item_name}!"
+
+    except Exception as e:
+        return f"Erro ao buscar item do bloco: {e}"
+    finally:
+        connection.close()
+
+
+def get_inventory_items(player_id):
+    """Retorna os itens do inventário de um jogador."""
+    connection = connect_to_db()
+    if not connection:
+        return "Erro ao conectar ao banco de dados."
+
+    try:
+        with connection.cursor() as cursor:
+            query = """
+            SELECT i.tipo, i.efeito, i.duração, i.raridade, inv.quantidade
+            FROM Inventario inv
+            JOIN Item i ON inv.idItem = i.idItem
+            WHERE inv.idPersonagem = %s
+            """
+            cursor.execute(query, (player_id,))
+            items = cursor.fetchall()
+
+        if not items:
+            return "Seu inventário está vazio."
+
+        return items
+
+    except Exception as e:
+        return f"Erro ao buscar itens do inventário: {e}"
+    finally:
+        connection.close()
+        
 def player_turn(stdcsr, player, encounter):
     while True:
         stdcsr.clear()
         row = 0
 
+        # Exibe detalhes do encontro
         if encounter.get('Personagem') is not None:
             if encounter.get('Personagem').get('tipo') == 'NPC':
                 stdcsr.addstr(row, 0, "Você encontrou um NPC")
@@ -104,7 +209,69 @@ def player_turn(stdcsr, player, encounter):
             stdcsr.addstr(row, 0, "[1] Bater no bloco")
             row += 1
             stdcsr.addstr(row, 0, "[2] Ignorar bloco")
+            stdcsr.refresh()
 
+            choice = stdcsr.getkey()
+
+        if choice == "1":  # Jogador escolheu bater no bloco
+            stdcsr.addstr(row + 1, 0, "Você bateu no bloco!")
+            stdcsr.refresh()
+            stdcsr.getch()  # Pausa para dar efeito
+
+            item_description = get_block_item(encounter.get('Bloco'), player)  # Obtém o item do bloco e adiciona ao inventário
+            
+            if item_description:
+                stdcsr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
+                row += 1
+            else:
+                stdcsr.addstr(row + 3, 0, "O bloco estava vazio.")
+
+            # Exibindo os itens no inventário após o item do bloco ser encontrado
+            stdcsr.addstr(row + 4, 0, "Itens no seu inventário:")
+            inventory_items = get_inventory_items(player.id)
+            if isinstance(inventory_items, list):
+                for i, item in enumerate(inventory_items):
+                    stdcsr.addstr(row + 5 + i, 0, f"{item[0]} (Efeito: {item[1]}) - {item[4]} unidades")
+            else:
+                stdcsr.addstr(row + 5, 0, inventory_items)
+
+            stdcsr.refresh()
+            stdcsr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
+
+        
+        elif choice == "2":  # Jogador escolheu ignorar o bloco
+            stdcsr.addstr(row + 1, 0, "Você ignorou o bloco.")
+            stdcsr.refresh()
+            stdcsr.getch()
+
+        # Ação de checkpoint e outras interações seguem aqui...
+
+        stdcsr.refresh()
+        stdcsr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop
+
+def insert_item_into_inventory(player_id, item_id, quantity):
+        connection = connect_to_db()
+        if not connection:
+            return "Erro ao conectar ao banco de dados."
+
+        try:
+            with connection.cursor() as cursor:
+                insert_query = """
+                    INSERT INTO Inventario (quantidade, idItem, idpersonagem)
+                    VALUES (%s, %s, %s)
+                """
+                cursor.execute(insert_query, (quantity, item_id, player_id))
+                connection.commit()
+                return "Item adicionado ao inventário com sucesso!"
+
+        except Exception as e:
+            connection.rollback()  # Caso ocorra algum erro, desfaça a transação
+            return f"Erro ao adicionar item ao inventário: {e}"
+
+        finally:
+            connection.close()
+
+       
         if encounter.get('CheckPoint!') is not None:
             stdcsr.addstr(row, 0, "Você encontrou um CheckPoint!")
             row += 1

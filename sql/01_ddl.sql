@@ -109,9 +109,12 @@ CREATE TABLE Inventario (
     idInventario SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,
     idItem INTEGER NOT NULL,
+    idPersonagem INTEGER NOT NULL,
     CONSTRAINT inventario_pk PRIMARY KEY (idInventario),
-    FOREIGN KEY (idItem) REFERENCES Item(idItem)
+    FOREIGN KEY (idItem) REFERENCES Item(idItem),
+    FOREIGN KEY (idPersonagem) REFERENCES personagem(idpersonagem)
 );
+
 
 CREATE TABLE Jogador (
     idPersonagem SERIAL NOT NULL,
