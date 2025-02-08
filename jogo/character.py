@@ -1,4 +1,5 @@
 import curses
+import battle
 from db import connect_to_db
 from battle import mario_battle_turn
 
@@ -174,80 +175,93 @@ def get_inventory_items(player_id):
         return f"Erro ao buscar itens do inventário: {e}"
     finally:
         connection.close()
-        
-def player_turn(stdcsr, player, encounter):
+
+def player_turn(stdscr, player, encounter):
     while True:
-        stdcsr.clear()
+        stdscr.clear()  # Limpa a tela a cada novo turno
         row = 0
 
         # Exibe detalhes do encontro
         if encounter.get('Personagem') is not None:
             if encounter.get('Personagem').get('tipo') == 'NPC':
-                stdcsr.addstr(row, 0, "Você encontrou um NPC")
+                stdscr.addstr(row, 0, "Você encontrou um NPC")
                 row += 1
-                stdcsr.addstr(row, 0, "[1] Conversar")
+                stdscr.addstr(row, 0, "[1] Conversar")
                 row += 1
-                stdcsr.addstr(row, 0, "[2] Ignorar")
+                stdscr.addstr(row, 0, "[2] Ignorar")
             else:
-                stdcsr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
-                stdcsr.refresh()
-                stdcsr.getch() 
-                mario_battle_turn(stdcsr, player)
+                stdscr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
+                stdscr.refresh()
+                stdscr.getch() 
+                mario_battle_turn(stdscr, player)
 
         row += 1  # Avança a linha
 
         if encounter.get('Loja') is not None:
-            stdcsr.addstr(row, 0, "Você encontrou uma loja!")
+            stdscr.addstr(row, 0, "Você encontrou uma loja!")
             row += 1
-            stdcsr.addstr(row, 0, "[1] Comprar")
+            stdscr.addstr(row, 0, "[1] Comprar")
             row += 1
-            stdcsr.addstr(row, 0, "[2] Vender")
+            stdscr.addstr(row, 0, "[2] Vender")
 
         if encounter.get('Bloco') is not None:
-            stdcsr.addstr(row, 0, "Você encontrou um bloco!")
+            stdscr.addstr(row, 0, "Você encontrou um bloco!")
             row += 1
-            stdcsr.addstr(row, 0, "[1] Bater no bloco")
+            stdscr.addstr(row, 0, "[1] Bater no bloco")
             row += 1
-            stdcsr.addstr(row, 0, "[2] Ignorar bloco")
-            stdcsr.refresh()
+            stdscr.addstr(row, 0, "[2] Ignorar bloco")
+            stdscr.refresh()
 
-            choice = stdcsr.getkey()
+            choice = stdscr.getkey()
 
         if choice == "1":  # Jogador escolheu bater no bloco
-            stdcsr.addstr(row + 1, 0, "Você bateu no bloco!")
-            stdcsr.refresh()
-            stdcsr.getch()  # Pausa para dar efeito
+            stdscr.clear()  # Limpa a tela para a próxima mensagem
+            stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
+            stdscr.refresh()
+            stdscr.getch()  # Pausa para dar efeito
 
             item_description = get_block_item(encounter.get('Bloco'), player)  # Obtém o item do bloco e adiciona ao inventário
             
             if item_description:
-                stdcsr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
+                stdscr.clear()  # Limpa a tela antes de mostrar a próxima mensagem
+                stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
                 row += 1
             else:
-                stdcsr.addstr(row + 3, 0, "O bloco estava vazio.")
+                stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
 
             # Exibindo os itens no inventário após o item do bloco ser encontrado
-            stdcsr.addstr(row + 4, 0, "Itens no seu inventário:")
+            stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
             inventory_items = get_inventory_items(player.id)
             if isinstance(inventory_items, list):
                 for i, item in enumerate(inventory_items):
-                    stdcsr.addstr(row + 5 + i, 0, f"{item[0]} (Efeito: {item[1]}) - {item[4]} unidades")
+                    stdscr.addstr(row + 5 + i, 0, f"{item[0]} (Efeito: {item[1]}) - {item[4]} unidades")
             else:
-                stdcsr.addstr(row + 5, 0, inventory_items)
+                stdscr.addstr(row + 5, 0, inventory_items)
 
-            stdcsr.refresh()
-            stdcsr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
+            stdscr.refresh()
+            stdscr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
+
+            stdscr.clear()  # Limpa a tela antes de mostrar a batalha
+            stdscr.addstr(row + 6, 0, "Prepare-se para a batalha!")
+            stdscr.refresh()
+            stdscr.getch()  # Pausa para dar um pouco de tempo
+
+            # Chama a função de batalha
+            battle.mario_battle_turn(stdscr, player)
+
 
         
         elif choice == "2":  # Jogador escolheu ignorar o bloco
-            stdcsr.addstr(row + 1, 0, "Você ignorou o bloco.")
-            stdcsr.refresh()
-            stdcsr.getch()
+            stdscr.clear()  # Limpa a tela antes de mostrar a mensagem de ignorar
+            stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
+            stdscr.refresh()
+            stdscr.getch()
+            return
 
         # Ação de checkpoint e outras interações seguem aqui...
 
-        stdcsr.refresh()
-        stdcsr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop
+        stdscr.refresh()
+        stdscr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop        
 
 def insert_item_into_inventory(player_id, item_id, quantity):
         connection = connect_to_db()
