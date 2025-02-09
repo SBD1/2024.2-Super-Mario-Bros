@@ -7,15 +7,15 @@ class Fase:
         self.name = name
 
 
-def get_phase_from_db():
+def get_phase_from_db(id_mundo):
     connection = connect_to_db()
     if not connection:
         return []
     
     try:
         with connection.cursor() as cursor:
-            query = "SELECT DISTINCT idFase, nome FROM Fase"
-            cursor.execute(query)
+            query = "SELECT DISTINCT idFase, nome FROM Fase WHERE idMundo == %s"
+            cursor.execute(query, (id_mundo,))
             phases = [Fase(id_phase=row[0], name=row[1]) for row in cursor.fetchall()]
         return phases
     except Exception as e:
@@ -25,10 +25,10 @@ def get_phase_from_db():
         connection.close()
 
 
-def choose_phase(stdscr):
+def choose_phase(stdscr, id_mundo):
     """Exibe a tela para o jogador escolher a fase."""
 
-    phases = get_phase_from_db()
+    phases = get_phase_from_db(id_mundo)
 
     if not phases:
         stdscr.addstr(0, 0, "Nenhuma fase disponível no banco de dados!")

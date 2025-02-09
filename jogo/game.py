@@ -1,6 +1,7 @@
 from character import choose_character, player_turn
 from phase import choose_phase
 from local import initial_local_by_phase, exploration_local, get_encounter_by_local
+from world import choose_world
 from db import connect_to_db
 
 import curses
@@ -37,7 +38,8 @@ def init_game(stdscr):
 
     character = choose_character(stdscr)  # Escolher o personagem
     
-    phase = choose_phase(stdscr)  # Escolher a fase
+    world = choose_world(stdscr) # Escolher o mundo
+    phase = choose_phase(stdscr, world.id_mundo)  # Escolher a fase
     local_phase = initial_local_by_phase(phase) # Fazer consulta sql para retornar qual é o local iniciar da fase
     stdscr.clear()
     stdscr.addstr(0, 0, f"Você está na fase: {phase.name}")

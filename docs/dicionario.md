@@ -1,15 +1,3 @@
-# **Dicionário de Dados - Jogo Mario**
-
-## **Tabela: `tipoPersonagem`**
-Armazena valores de constantes relevantes ao jogo, como `pontuaçãoBase` e `vidaBase`.
-
-| Nome  | Descrição                                   | Tipo de dado | Tamanho | Restrições de domínio |
-|-------|---------------------------------------------|--------------|---------|------------------------|
-| `nome`  | Nome que identifica unicamente uma constante | `VARCHAR`    | 20      | PK, Not Null           |
-| `valor` | Valor numérico da constante               | `INTEGER`    | -       | Not Null               |
-
----
-
 ## **Tabela: `jogador`**
 Armazena as informações referentes ao personagem jogável do usuário.
 
@@ -21,6 +9,9 @@ Armazena as informações referentes ao personagem jogável do usuário.
 | `faseAtual`  | Determina a fase atual do personagem        | `INTEGER`    | -       | FK, Not Null, Default = 1                         |
 | `itemMagico` | Referência ao item mágico                   | `INTEGER`    | -       | FK                                                 |
 | `areaAtual`  | Referência à área onde o jogador está       | `VARCHAR`    | 35      | FK, Not Null                                       |
+| `moeda`      | Quantidade de moedas do jogador             | `INTEGER`    | -       | Not Null                                           |
+| `idYoshi`    | Referência ao Yoshi associado               | `INTEGER`    | -       | FK                                                 |
+| `idInventario` | Referência ao inventário do jogador       | `INTEGER`    | -       | FK                                                 |
 
 ---
 
@@ -36,41 +27,7 @@ Armazena as informações referentes aos inimigos.
 | `velocidade`       | Velocidade do inimigo                   | `INTEGER`    | -       | Not Null               |
 | `pontosExperiencia`| Experiência ganha ao derrotar o inimigo | `INTEGER`    | -       | Not Null               |
 | `nivel`            | Referência ao nível do inimigo          | `INTEGER`    | -       | FK, Not Null           |
-
----
-
-## **Tabela: `inimigoConcreto`**
-Armazena as instâncias dos inimigos gerados no jogo.
-
-| Nome           | Descrição                                 | Tipo de dado | Tamanho | Restrições de domínio |
-|----------------|-------------------------------------------|--------------|---------|------------------------|
-| `nomeConcreto` | Nome único de uma instância de inimigo    | `VARCHAR`    | 15      | PK, Not Null           |
-| `vidaAtual`    | A vida atual da instância                 | `INTEGER`    | -       | Not Null               |
-| `inimigo`      | Referência ao inimigo base                | `VARCHAR`    | 15      | FK, Not Null           |
-| `areaAtual`    | Área onde o inimigo se encontra           | `VARCHAR`    | 35      | FK, Not Null           |
-| `loot`         | Referência ao item ganho ao derrotar      | `INTEGER`    | -       | FK, Not Null           |
-
----
-
-## **Tabela: `mundo`**
-Armazena os mundos do jogo.
-
-| Nome              | Descrição                                | Tipo de dado | Tamanho | Restrições de domínio |
-|-------------------|------------------------------------------|--------------|---------|------------------------|
-| `idMundo`         | Identificador único do mundo            | `SERIAL`     | -       | PK, Not Null           |
-| `nome`            | Nome do mundo                           | `VARCHAR`    | 50      | Not Null               |
-| `descricao`       | Descrição detalhada do mundo            | `TEXT`       | -       | -                      |
-| `nivel_inicial_id`| Referência ao nível inicial do mundo     | `INTEGER`    | -       | FK, Not Null           |
-
----
-
-## **Tabela: `fase`**
-Armazena as fases do jogo.
-
-| Nome              | Descrição                                    | Tipo de dado | Tamanho | Restrições de domínio |
-|-------------------|----------------------------------------------|--------------|---------|------------------------|
-| `idNivel`         | Referência ao nível atual da fase           | `INTEGER`    | -       | PK, FK, Not Null       |
-| `quantidadeFases` | Número de fases necessárias para o próximo mundo | `INTEGER`    | -       | Not Null               |
+| `habilidade`       | Habilidade do inimigo                   | `VARCHAR`    | 15      | Not Null               |
 
 ---
 
@@ -84,26 +41,62 @@ Armazena informações dos blocos.
 | `conteudo` | Conteúdo do bloco (ex.: moeda, item)     | `VARCHAR`    | 50      | -                      |
 | `nivel_id` | Referência ao nível onde o bloco aparece | `INTEGER`    | -       | FK, Not Null           |
 | `posicao`  | Posição do bloco no nível                | `VARCHAR`    | 10      | Not Null               |
+| `idItem`   | Referência ao item contido no bloco      | `INTEGER`    | -       | FK                     |
+| `idYoshi`  | Referência ao Yoshi contido no bloco     | `INTEGER`    | -       | FK                     |
+| `idMoeda`  | Referência à moeda contida no bloco      | `INTEGER`    | -       | FK                     |
 
 ---
 
-## **Tabela: `checkpoint`**
-Armazena informações dos checkpoints.
+## **Tabela: `local`**
+Armazena informações dos locais.
 
 | Nome           | Descrição                                 | Tipo de dado | Tamanho | Restrições de domínio |
 |----------------|-------------------------------------------|--------------|---------|------------------------|
-| `idCheckpoint` | Identificador único do checkpoint        | `SERIAL`     | -       | PK, Not Null           |
-| `nivel_id`     | Referência ao nível em que o checkpoint está | `INTEGER`    | -       | FK, Not Null           |
-| `posicao`      | Posição do checkpoint                    | `VARCHAR`    | 10      | Not Null               |
+| `idLocal`      | Identificador único do local             | `SERIAL`     | -       | PK, Not Null           |
+| `nome`         | Nome do local                            | `VARCHAR`    | 50      | Not Null               |
+| `regiao`       | Região do local                          | `VARCHAR`    | 50      | Not Null               |
+| `descricao`    | Descrição do local                       | `TEXT`       | -       | -                      |
+| `idFase`       | Referência à fase relacionada ao local   | `INTEGER`    | -       | FK, Not Null           |
+| `idBloco`      | Referência ao bloco associado ao local   | `INTEGER`    | -       | FK                     |
+| `idPersonagem` | Referência ao personagem associado ao local | `INTEGER`    | -       | FK                     |
+| `idLoja`       | Referência à loja associada ao local     | `INTEGER`    | -       | FK                     |
+| `idCheckpoint` | Referência ao checkpoint associado ao local | `INTEGER`    | -       | FK                     |
 
 ---
 
-## **Tabela: `cano`**
-Armazena informações sobre os canos.
+## **Tabela: `personagem`**
+Armazena informações sobre os personagens no jogo.
 
-| Nome       | Descrição                                   | Tipo de dado | Tamanho | Restrições de domínio |
-|------------|---------------------------------------------|--------------|---------|------------------------|
-| `idCano`   | Identificador único do cano                | `SERIAL`     | -       | PK, Not Null           |
-| `origem`   | Área de origem                             | `VARCHAR`    | 35      | FK, Not Null           |
-| `destino`  | Área de destino                            | `VARCHAR`    | 35      | FK, Not Null           |
-| `requisito`| Requisitos para usar o cano                | `TEXT`       | -       | -                      |
+| Nome           | Descrição                                 | Tipo de dado | Tamanho | Restrições de domínio |
+|----------------|-------------------------------------------|--------------|---------|------------------------|
+| `idPersonagem` | Identificador único do personagem        | `SERIAL`     | -       | PK, Not Null           |
+| `nome`         | Nome do personagem                       | `VARCHAR`    | 20      | Not Null               |
+| `vida`         | Vida do personagem                       | `INTEGER`    | -       | Not Null               |
+| `dano`         | Dano causado pelo personagem             | `INTEGER`    | -       | Not Null               |
+| `pontos`       | Pontos associados ao personagem          | `INTEGER`    | -       | Not Null               |
+| `idLocal`      | Referência ao local onde o personagem se encontra | `INTEGER`    | -       | FK                     |
+| `tipoJogador`  | Tipo de jogador (Jogador, Inimigo, NPC)  | `VARCHAR`    | 15      | Not Null               |
+
+---
+
+## **Tabela: `inventario`**
+Armazena informações sobre os itens no inventário.
+
+| Nome           | Descrição                                 | Tipo de dado | Tamanho | Restrições de domínio |
+|----------------|-------------------------------------------|--------------|---------|------------------------|
+| `idInventario` | Identificador único do inventário        | `SERIAL`     | -       | PK, Not Null           |
+| `quantidade`   | Quantidade de itens                      | `INTEGER`    | -       | Not Null               |
+| `idItem`       | Referência ao item                       | `INTEGER`    | -       | FK, Not Null           |
+| `idPersonagem` | Referência ao personagem associado ao inventário | `INTEGER`    | -       | FK, Not Null           |
+
+---
+
+## **Tabela: `instancia`**
+Armazena informações sobre as instâncias de jogo.
+
+| Nome           | Descrição                                 | Tipo de dado | Tamanho | Restrições de domínio |
+|----------------|-------------------------------------------|--------------|---------|------------------------|
+| `idInstancia`  | Identificador único da instância         | `SERIAL`     | -       | PK, Not Null           |
+| `vidaAtual`    | Vida atual da instância                  | `INTEGER`    | -       | Not Null               |
+| `moedaAtual`   | Quantidade de moedas na instância        | `INTEGER`    | -       | Not Null               |
+| `idJogador`    | Referência ao jogador associado à instância | `INTEGER`    | -       | FK, Not Null           |
