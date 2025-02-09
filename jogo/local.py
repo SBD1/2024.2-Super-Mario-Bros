@@ -59,7 +59,7 @@ def exploration_local(stdscr, id_phase, local_phase, id_character):
     else:
         stdscr.addstr(3, 0, "Direção inválida")
 
-    if encounter.get('Checkpoint') is not None:
+    if encounter and 'Checkpoint' in encounter:
         new_local.is_final_local = True
     
     stdscr.refresh()

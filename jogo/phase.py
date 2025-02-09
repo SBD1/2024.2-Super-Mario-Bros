@@ -14,7 +14,7 @@ def get_phase_from_db(id_mundo):
     
     try:
         with connection.cursor() as cursor:
-            query = "SELECT DISTINCT idFase, nome FROM Fase WHERE idMundo == %s"
+            query = "SELECT DISTINCT idFase, nome FROM Fase WHERE idMundo = %s"
             cursor.execute(query, (id_mundo,))
             phases = [Fase(id_phase=row[0], name=row[1]) for row in cursor.fetchall()]
         return phases

@@ -1,5 +1,5 @@
 import random
-from your_db_connection_module import connect_to_db
+from db import connect_to_db
 import curses
 
 class Item:
