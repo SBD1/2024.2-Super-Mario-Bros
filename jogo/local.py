@@ -7,6 +7,7 @@ class Local:
         self.id = id_local
         self.name = name
         self.description = description
+        self.is_final_local = False
 
 def initial_local_by_phase(id_phase):
     connection = connect_to_db()
@@ -57,6 +58,9 @@ def exploration_local(stdscr, id_phase, local_phase, id_character):
         encounter = get_encounter_by_local(new_local)
     else:
         stdscr.addstr(3, 0, "Direção inválida")
+
+    if encounter.get('Checkpoint') is not None:
+        new_local.is_final_local = True
     
     stdscr.refresh()
     stdscr.getch()

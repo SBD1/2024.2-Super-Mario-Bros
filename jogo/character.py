@@ -263,6 +263,12 @@ def player_turn(stdscr, player, encounter):
 
             choice = stdscr.getkey()
 
+        if encounter.get('CheckPoint!') is not None:
+            stdscr.addstr(row, 0, "Você encontrou um CheckPoint!")
+            row += 1
+            stdscr.addstr(row, 0, "CheckPoint Ativado!")
+            active_checkpoint(player)
+
         if choice == "1" and encounter.get('Bloco') is not None:  # Jogador escolheu bater no bloco
             stdscr.clear()  # Limpa a tela para a próxima mensagem
             stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
@@ -339,12 +345,6 @@ def insert_item_into_inventory(player_id, item_id, quantity):
         finally:
             connection.close()
 
-       
-        if encounter.get('CheckPoint!') is not None:
-            stdcsr.addstr(row, 0, "Você encontrou um CheckPoint!")
-            row += 1
-            stdcsr.addstr(row, 0, "CheckPoint Ativado!")
-            active_checkpoint(player)  # Ativa o checkpoint para o jogador
 
         stdcsr.refresh()
         choice = stdcsr.getkey()

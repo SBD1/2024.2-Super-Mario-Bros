@@ -54,6 +54,8 @@ def init_game(stdscr):
         local_phase, encounter = exploration_local(stdscr, phase.id_phase, local_phase, character.id)
         if encounter:
             player_turn(stdscr, character, encounter)
+        if local_phase.is_final_local:
+            print("ùltimo local da fase")
 
     stdscr.clear()
     stdscr.addstr(0, 0, f"{character} foi derrotado")
