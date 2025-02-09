@@ -4,6 +4,10 @@ import pyfiglet  # Importando o pyfiglet
 import pygame
 import os
 
+#Definindo fase final
+TOTAL_MUNDOS = 3
+FASES_POR_MUNDO = 3
+
 # Definindo o personagem Mario
 class Mario:
     def __init__(self):
@@ -12,6 +16,16 @@ class Mario:
         self.posicao = [1, 1]  # Posição inicial do Mario na matriz (1, 1)
         self.checkpoint = [3, 2]  # O checkpoint fixo que sempre será 3, 2
         self.salvou_checkpoint = False  # Indica se Mario já salvou o checkpoint
+        self.fase = 1
+        self.mundo = 1
+        
+    def avancar_fase(self):
+        if self.fase < FASES_POR_MUNDO:
+            self.fase += 1
+        else:
+            print(f"Mundo {self.mundo} - Fase {self.fase}: Esta era a fase final do mundo!")
+            self.fase = 1
+            self.mundo += 1
 
 
     def mover(self, direcao, mapa):
