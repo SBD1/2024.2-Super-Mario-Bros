@@ -179,7 +179,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
     return True
 
 
-def jogo(stdscr, player, fase):
+def entrar_fase(stdscr, player, fase):
     curses.curs_set(0)  # Desabilitar o cursor
     stdscr.nodelay(1)  # Não bloquear na espera de uma tecla
     stdscr.timeout(100)  # Timeout para obter uma tecla
