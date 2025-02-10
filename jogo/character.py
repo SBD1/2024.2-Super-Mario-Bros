@@ -133,7 +133,7 @@ def get_characters_from_db():
     try:
         with connection.cursor() as cursor:
             query = """
-            SELECT p.idpersonagem, p.nome, p.vida, p.dano, p.pontos, p.idLocal, p.tipojogador, j.moeda
+            SELECT p.idpersonagem, p.nome, p.vida, p.dano, p.pontos, p.idFase, p.tipojogador, j.moeda
             FROM personagem p
             JOIN jogador j ON p.idpersonagem = j.idpersonagem
             WHERE p.tipojogador = 'Jogador'
@@ -175,7 +175,7 @@ def get_inimigo_from_db(id_personagem, mapa):
     try:
         with connection.cursor() as cursor:
             query = """
-            SELECT p.nome, p.vida, p.dano, p.pontos, p.idLocal, i.tipo, i.habilidade
+            SELECT p.nome, p.vida, p.dano, p.pontos, p.idFase, i.tipo, i.habilidade
             FROM Personagem p
             JOIN Inimigo i ON p.idPersonagem = i.idPersonagem
             WHERE p.idPersonagem = %s AND p.tipoJogador = 'Inimigo'

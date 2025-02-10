@@ -78,33 +78,16 @@ CREATE TABLE LojaItem (
 );
 
 
-CREATE TABLE Local (
-    idLocal SERIAL NOT NULL,
-    nome VARCHAR(50) NOT NULL,
-    regiao VARCHAR(50) NOT NULL,
-    descricao TEXT,
-    idFase INTEGER NOT NULL,
-    idBloco INTEGER,
-    idPersonagem INTEGER,
-    idLoja INTEGER,
-    idCheckpoint INTEGER,
-    CONSTRAINT local_pk PRIMARY KEY (idLocal),
-    FOREIGN KEY (idFase) REFERENCES Fase(idFase),
-    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco) ON DELETE SET NULL,
-    FOREIGN KEY (idLoja) REFERENCES Loja(idLoja) ON DELETE SET NULL,
-    FOREIGN KEY (idCheckpoint) REFERENCES Checkpoint(idCheckpoint) ON DELETE SET NULL
-);
-
 CREATE TABLE Personagem (
     idPersonagem SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
     vida INTEGER NOT NULL,
     dano INTEGER NOT NULL,
     pontos INTEGER NOT NULL,
-    idLocal INTEGER, -- Removendo o NOT NULL
+    idFase INTEGER, -- Removendo o NOT NULL
     tipoJogador VARCHAR(15), -- "Jogador", "Inimigo", "NPC"
     CONSTRAINT personagem_pk PRIMARY KEY (idPersonagem),
-    FOREIGN KEY (idLocal) REFERENCES Local(idLocal)
+    FOREIGN KEY (idFase) REFERENCES Fase(idFase)
 );
 
 CREATE TABLE Inimigo (

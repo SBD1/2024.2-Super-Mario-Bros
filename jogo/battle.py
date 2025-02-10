@@ -4,7 +4,6 @@ import pygame
 import os
 from phase import get_inimigo_by_fase, get_blocos_by_fase
 from matriz import gera_matriz
-from character import get_block_item, get_inventory_items, insert_item_into_inventory
 import random
 
 class Bloco:
@@ -180,6 +179,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
 
 
 def entrar_fase(stdscr, player, fase):
+    from character import get_block_item, get_inventory_items, insert_item_into_inventory
     curses.curs_set(0)  # Desabilitar o cursor
     stdscr.nodelay(1)  # Não bloquear na espera de uma tecla
     stdscr.timeout(100)  # Timeout para obter uma tecla
