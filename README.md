@@ -69,6 +69,21 @@ Para iniciar os serviços, execute:
 docker-compose up -d
 ```
 
+## 🚀 Executando o jogo
+
+Para rodar o jogo, siga estes passos:
+
+```sh
+cd 2024.2-Super-Mario-Bros/jogo
+python game.py
+```
+
+Ou, caso seu sistema use o Python 3 por padrão:
+
+```sh
+python3 game.py
+```
+
 ## 🎬 Apresentações
 
   - [Apresentação Módulo 1]()
