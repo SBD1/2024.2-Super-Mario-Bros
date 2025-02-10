@@ -189,8 +189,8 @@ def entrar_fase(stdscr, player, fase):
     # Criando o mapa (matriz) 8x8
     mapa = gera_matriz()
     player.mapa = mapa  # Definindo o mapa do jogador
-    inimigos = get_inimigo_by_fase(fase.id, mapa)  # Pegando inimigos na fase
-    blocos = get_blocos_by_fase(fase.id, mapa)  # Pegando blocos na fase
+    inimigos = get_inimigo_by_fase(fase.id_phase, mapa)  # Pegando inimigos na fase
+    blocos = get_blocos_by_fase(fase.id_phase, mapa)  # Pegando blocos na fase
 
     pygame.mixer.init()
     pygame.mixer.set_num_channels(2)
@@ -200,7 +200,7 @@ def entrar_fase(stdscr, player, fase):
     music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
 
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Escolha a direção de {player.nome} para começar a fase:")
+    stdscr.addstr(0, 0, f"Escolha a direção de {player.name} para começar a fase:")
     stdscr.addstr(1, 0, "Pressione as setas esquerda (←) ou direita (→) para escolher")
     stdscr.refresh()
 
