@@ -1,10 +1,7 @@
-<img
-    src="https://www.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/04/super-mario-bros-se-torna-maior-adaptac%CC%A7a%CC%83o-de-jogo-para-cinema.jpg"
-    alt="Mario"
-    style="display: block; margin: auto; width: 500px;"
-/>
+<div align="center">
+  <img  src="https://t.ctcdn.com.br/c9F96TE3HjZQlnWtgkcZI8fd_3w=/768x432/smart/i817043.jpeg" height="auto" width="100%"/>
+</div>
 
-<font size="2"><p style="text-align: center"> [Fonte da Imagem](https://www.cnnbrasil.com.br/wp-content/uploads/sites/12/2023/04/super-mario-bros-se-torna-maior-adaptac%CC%A7a%CC%83o-de-jogo-para-cinema.jpg) </p></font>
 
 Super Mario Bros é um dos jogos mais icônicos e influentes da história dos videogames, lançado pela Nintendo em 1985 para o console Nintendo Entertainment System (NES). O jogo foi criado por Shigeru Miyamoto e foi um dos primeiros jogos de plataforma a ganhar popularidade em massa, definindo o gênero e estabelecendo a base para muitos dos jogos modernos.
 

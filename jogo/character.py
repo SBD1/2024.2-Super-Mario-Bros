@@ -1,13 +1,18 @@
 import curses
-import battle
 from db import connect_to_db
 from battle import mario_battle_turn
+from loja import get_loja_with_items, comprar_item, vender_item
 
 class Character:
-    def __init__(self, id_character, name, vida):
+    def __init__(self, id_character, name, vida, dano, pontos, id_local, tipo_jogador, moeda):
         self.id = id_character
         self.name = name
         self.vida = vida
+        self.dano = dano
+        self.pontos = pontos
+        self.id_local = id_local
+        self.tipo_jogador = tipo_jogador
+        self.moeda = moeda
 
 def get_characters_from_db():
     connection = connect_to_db()
@@ -17,7 +22,7 @@ def get_characters_from_db():
     try:
         with connection.cursor() as cursor:
             query = """
-            SELECT p.idpersonagem, p.nome, p.vida, p.dano, p.pontos, p.idLocal, p.tipojogador
+            SELECT p.idpersonagem, p.nome, p.vida, p.dano, p.pontos, p.idLocal, p.tipojogador, j.moeda
             FROM personagem p
             JOIN jogador j ON p.idpersonagem = j.idpersonagem
             WHERE p.tipojogador = 'Jogador'
@@ -28,11 +33,17 @@ def get_characters_from_db():
         if not characters:
             return "Nenhum jogador disponível para escolha."
 
+        # Ajustando para incluir os novos atributos
         characters_list = [
             Character(
                 id_character=character[0],
                 name=character[1], 
-                vida=character[2]
+                vida=character[2],
+                dano=character[3],
+                pontos=character[4],
+                id_local=character[5],
+                tipo_jogador=character[6],
+                moeda=character[7]
             )
             for character in characters
         ]
@@ -43,6 +54,7 @@ def get_characters_from_db():
         return []
     finally:
         connection.close()
+
 
 
 def choose_character(stdscr):
@@ -103,8 +115,43 @@ def get_block_item(id_bloco, player):
             item_name = item
         elif yoshi:
             item_name = f"Yoshi: {yoshi}"
+            with connection.cursor() as cursor:
+                update_yoshi_query = """
+                UPDATE Jogador
+                SET idYoshi = %s
+                WHERE idPersonagem = %s
+                """
+                cursor.execute(update_yoshi_query, (yoshi, player.id)) 
+                connection.commit()
         elif moeda:
             item_name = f"{moeda} moedas"
+            player.moeda += moeda
+            with connection.cursor() as cursor:
+                check_query = """
+                SELECT moeda
+                FROM Jogador
+                WHERE idPersonagem = %s
+                """
+                cursor.execute(check_query, (player.id,))
+                current_money = cursor.fetchone()
+
+                if current_money:
+                    new_money = current_money[0] + moeda
+                    update_money_query = """
+                    UPDATE Jogador
+                    SET moeda = %s
+                    WHERE idPersonagem = %s
+                    """
+                    cursor.execute(update_money_query, (new_money, player.id))
+                    connection.commit()
+                else:
+                    insert_money_query = """
+                    UPDATE Jogador
+                    SET moeda = %s
+                    WHERE idPersonagem = %s
+                    """
+                    cursor.execute(insert_money_query, (moeda, player.id))
+                    connection.commit()
         else:
             return "O bloco está vazio."
 
@@ -204,6 +251,8 @@ def player_turn(stdscr, player, encounter):
             row += 1
             stdscr.addstr(row, 0, "[2] Vender")
 
+            choice = stdscr.getkey()
+
         if encounter.get('Bloco') is not None:
             stdscr.addstr(row, 0, "Você encontrou um bloco!")
             row += 1
@@ -214,7 +263,13 @@ def player_turn(stdscr, player, encounter):
 
             choice = stdscr.getkey()
 
-        if choice == "1":  # Jogador escolheu bater no bloco
+        if encounter.get('CheckPoint!') is not None:
+            stdscr.addstr(row, 0, "Você encontrou um CheckPoint!")
+            row += 1
+            stdscr.addstr(row, 0, "CheckPoint Ativado!")
+            active_checkpoint(player)
+
+        if choice == "1" and encounter.get('Bloco') is not None:  # Jogador escolheu bater no bloco
             stdscr.clear()  # Limpa a tela para a próxima mensagem
             stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
             stdscr.refresh()
@@ -248,16 +303,21 @@ def player_turn(stdscr, player, encounter):
 
             # Chama a função de batalha
             battle.mario_battle_turn(stdscr, player)
-
-
-        
-        elif choice == "2":  # Jogador escolheu ignorar o bloco
+        elif choice == "2" and encounter.get('Bloco') is not None:  # Jogador escolheu ignorar o bloco
             stdscr.clear()  # Limpa a tela antes de mostrar a mensagem de ignorar
             stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
             stdscr.refresh()
             stdscr.getch()
             return
+        
+        if choice == "1" and encounter.get('Loja') is not None:
+            loja = get_loja_with_items(encounter.get('Loja'))
+            comprar_item(stdscr, player, loja)
+        elif choice == "2" and encounter.get('Loja') is not None:
+            loja = get_loja_with_items(encounter.get('Loja'))
+            vender_item(stdscr, player.id, loja)
 
+        
         # Ação de checkpoint e outras interações seguem aqui...
 
         stdscr.refresh()
@@ -285,12 +345,6 @@ def insert_item_into_inventory(player_id, item_id, quantity):
         finally:
             connection.close()
 
-       
-        if encounter.get('CheckPoint!') is not None:
-            stdcsr.addstr(row, 0, "Você encontrou um CheckPoint!")
-            row += 1
-            stdcsr.addstr(row, 0, "CheckPoint Ativado!")
-            active_checkpoint(player)  # Ativa o checkpoint para o jogador
 
         stdcsr.refresh()
         choice = stdcsr.getkey()

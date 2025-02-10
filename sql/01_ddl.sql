@@ -68,6 +68,16 @@ CREATE TABLE Loja (
     CONSTRAINT loja_pk PRIMARY KEY (idLoja)
 );
 
+CREATE TABLE LojaItem (
+    idLoja INTEGER NOT NULL,
+    idItem INTEGER NOT NULL,
+    quantidade INTEGER NOT NULL DEFAULT 1,
+    CONSTRAINT loja_item_pk PRIMARY KEY (idLoja, idItem),
+    CONSTRAINT loja_item_loja_fk FOREIGN KEY (idLoja) REFERENCES Loja(idLoja) ON DELETE CASCADE,
+    CONSTRAINT loja_item_item_fk FOREIGN KEY (idItem) REFERENCES Item(idItem) ON DELETE CASCADE
+);
+
+
 CREATE TABLE Local (
     idLocal SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,

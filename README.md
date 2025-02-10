@@ -1,4 +1,6 @@
-<div align="center"> <img  src="https://t.ctcdn.com.br/c9F96TE3HjZQlnWtgkcZI8fd_3w=/768x432/smart/i817043.jpeg" height="auto" width="100%"/> </div>
+<div align="center"> 
+  <img  src="https://t.ctcdn.com.br/c9F96TE3HjZQlnWtgkcZI8fd_3w=/768x432/smart/i817043.jpeg" height="auto" width="100%"/> 
+</div>
 
 ## 🎮 Sobre o jogo
 
@@ -8,14 +10,87 @@ Super Mario Bros é um dos jogos mais icônicos e influentes da história dos vi
 
 No jogo, você controla o personagem Mario, um encanador italiano, que embarca em uma jornada para salvar a Princesa Peach do vilão Bowser, o Rei dos Koopas. A história se passa no Reino do Cogumelo, onde Bowser sequestrou a princesa e transformou seus habitantes em blocos e objetos mágicos.
 
+## 🛠️ Instalação e dependências
+
+Para executar o código, é necessário instalar algumas dependências. Siga os passos abaixo para preparar seu ambiente:
+
+### 📌 Instalando as dependências
+
+Execute os seguintes comandos no terminal:
+
+```sh
+pip install pygame
+pip install pyfiglet
+```
+
+### 🔊 Verificando e instalando o PulseAudio (Linux)
+
+Para garantir que o PulseAudio esteja instalado corretamente, execute:
+
+```sh
+pulseaudio --version
+```
+
+Se o PulseAudio não estiver instalado, use os seguintes comandos para atualizar os pacotes e instalar:
+
+```sh
+sudo apt update && sudo apt install pulseaudio
+```
+
+## 🐳 Configuração do Docker
+
+O projeto utiliza Docker para facilitar a configuração do banco de dados. Para rodar os serviços necessários, utilize o seguinte arquivo `docker-compose.yml`:
+
+```yaml
+services:
+  db:
+    image: postgres
+    container_name: banco_supermario
+    restart: always
+    shm_size: 128mb
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+```
+
+Para iniciar os serviços, execute:
+
+```sh
+docker-compose up -d
+```
+
+## 🚀 Executando o jogo
+
+Para rodar o jogo, siga estes passos:
+
+```sh
+cd 2024.2-Super-Mario-Bros/jogo
+python game.py
+```
+
+Ou, caso seu sistema use o Python 3 por padrão:
+
+```sh
+python3 game.py
+```
 
 ## 🎬 Apresentações
 
   - [Apresentação Módulo 1]()
   - [Apresentação Módulo 2]()
-  - [Aoresentação Módulo 3]()
+  - [Apresentação Módulo 3]()
 
- ## 👨‍💻 Equipe do Projeto
+## 👨‍💻 Equipe do Projeto
 
 <div align="center">
   <table>
@@ -43,3 +118,4 @@ No jogo, você controla o personagem Mario, um encanador italiano, que embarca e
     </tr>
   </table>
 </div>
+
