@@ -2,8 +2,9 @@ import curses
 import pyfiglet  # Importando o pyfiglet
 import pygame
 import os
-from phase import get_inimigo_by_fase
-from phase import get_blocos_by_fase
+from phase import get_inimigo_by_fase, get_blocos_by_fase
+from matriz import gera_matriz
+from character import get_block_item, get_inventory_items, insert_item_into_inventory
 import random
 
 class Bloco:
@@ -77,22 +78,19 @@ def exibir_mapa(stdscr, player, mapa):
     stdscr.refresh()
 
 
-# Função para rodar um turno de batalha
-def turno_batalha(stdscr, player, inimigo, mapa, items):
-    # Verifica se o inimigo foi derrotado antes de iniciar a batalha
+def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
     if inimigo.derrotado:
-        return True  # Retorna imediatamente, não continua a batalha
+        return True
 
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Início do turno de {player.nome}! Vida de {player.nome}: {player.vida}, Pontos: {player.pontos}")
+    stdscr.addstr(0, 0, f"Início do turno de {player.nome}! Vida: {player.vida}, Pontos: {player.pontos}")
     stdscr.addstr(1, 0, f"Inimigo: {inimigo.nome}, Vida: {inimigo.vida}")
-    stdscr.addstr(3, 0, "Escolha sua Ação: [Q] Pular, [E] Desviar")
-    stdscr.addstr(3, 0, "Escolha seu item ou Ação: ")
-    stdscr.refresh()
-
+    stdscr.addstr(3, 0, "Escolha sua ação: [Q] Pular, [E] Desviar")
+    
     for i, item in enumerate(items):
-        stdscr.addstr(i + 1, 0, f"[{i + 1}] {item.tipo} - Efeito: {item.efeito}")
-        stdscr.addstr(len(items) + 2, 0, "Pressione o número correspondente para escolher.")
+        stdscr.addstr(5 + i, 0, f"[{i + 1}] {item.tipo} - Efeito: {item.efeito}")
+    
+    stdscr.refresh()
 
     while True:
         key = stdscr.getch()
@@ -101,118 +99,86 @@ def turno_batalha(stdscr, player, inimigo, mapa, items):
             chosen_index = key - ord('1')
             item = items[chosen_index]
             dano = player.atacar(item, inimigo)
-            stdscr.addstr(5, 0, f"{inimigo.nome} sofreu {dano} de dano pelo {item.tipo}!")
-        elif key == ord('q') or key == ord('Q'):  # Pular
-            dano_pulo = 10
-            if inimigo.nome == "Goomba":
-                inimigo.perder_vida(inimigo.vida)  # Goomba morre instantaneamente
-                stdscr.addstr(5, 0, f"Goomba foi derrotado instantaneamente!")
-                stdscr.refresh()
-                curses.napms(2000)
-                player.pontos += inimigo.pontos  # Adiciona os pontos do Goomba
-            elif inimigo.nome == "Koopa Troopa":
-                inimigo.perder_vida(dano_pulo)  # Koopa Troopa leva o dano de 10
-                stdscr.addstr(5, 0, f"{inimigo.nome} sofreu {dano_pulo} de dano pelo pulo!")
-                if inimigo.vida <= 0:
-                    player.pontos += inimigo.pontos  # Adiciona os pontos do Koopa Troopa
+            stdscr.addstr(10, 0, f"{inimigo.nome} sofreu {dano} de dano pelo {item.tipo}!")
+        
+        elif key == ord('q') or key == ord('Q'):
+            inimigo.perder_vida(inimigo.vida) 
+            stdscr.addstr(10, 0, f"{inimigo.nome} foi derrotado!")
+            player.pontos += inimigo.pontos
             break
 
-        elif key == ord('e') or key == ord('E'):  # Desviar
+        elif key == ord('e') or key == ord('E'):
             player.desviar(mapa)
             break
 
-        # Mostrar a vida atual do inimigo e Mario após o ataque
-        stdscr.clear()
-        stdscr.addstr(0, 0, f"Início do turno de Mario! Vida de Mario: {player.vida}, Pontos: {player.pontos}")
-        stdscr.addstr(1, 0, f"Inimigo: {inimigo.nome}, Vida: {inimigo.vida}")
-        stdscr.addstr(3, 0, "Escolha sua ação: [F] Usar Flor de Fogo, [B] Usar Boomerang, [Q] Pular, [E] Desviar")
-        stdscr.addstr(6, 0, f"Vida atual de {inimigo.nome}: {inimigo.vida}")
-        stdscr.addstr(7, 0, f"Vida de Mario: {player.vida}")
         stdscr.refresh()
 
-        # Verificando se o inimigo foi derrotado
         if inimigo.vida <= 0:
-            player.pontos += inimigo.pontos
-            stdscr.addstr(8, 0, f"{inimigo.nome} foi derrotado! Mario ganha {inimigo.pontos} pontos.")
+            stdscr.addstr(12, 0, f"{inimigo.nome} foi derrotado! Você ganhou {inimigo.pontos} pontos.")
             stdscr.refresh()
-            curses.napms(2000)  # Espera 2 segundos para dar tempo de ver a mensagem
-            # Marca a posição com 'X' após a batalha
+            curses.napms(2000)
             mapa[inimigo.posicao[0]][inimigo.posicao[1]] = 'X'
-            return True  # Retorna para o jogo normal, sem reiniciar o turno
+            return True  
 
-        
-        # Se Mario perdeu toda a vida
         if player.vida <= 0:
-            stdscr.addstr(10, 0, f"{player.name} perdeu toda a sua vida. Game Over!")
+            stdscr.addstr(14, 0, f"{player.nome} perdeu toda a sua vida. Game Over!")
             stdscr.refresh()
-            curses.napms(2000)  # Espera 2 segundos para dar tempo de ver a mensagem
+            curses.napms(2000)
 
             music_channel.stop()
-
-            # Tocar a música de morte
             death_music_path = os.path.join(os.path.dirname(__file__), "death.mp3")
             pygame.mixer.music.load(death_music_path)
             pygame.mixer.music.play()
-
-            # Perguntar ao jogador se ele quer continuar
+            
             stdscr.clear()
-            stdscr.addstr(0, 0, "Deseja continuar o jogo? Sim [S], Não [N]")
+            stdscr.addstr(0, 0, "Deseja continuar? Sim [S], Não [N]")
             stdscr.refresh()
 
-            # Aguarda a resposta
             while True:
                 key = stdscr.getch()
-
                 if key == ord('s') or key == ord('S'):
                     if player.salvou_checkpoint:
-                        player.posicao = player.checkpoint[:]  # Voltar para o checkpoint em [3, 2]
-                        player.vida = 100  # Restaurar a vida
-                        player.pontos = 0  # Resetar os pontos
-                        # Alterar a posição do inimigo para 'I' (indicando que o inimigo será reposicionado)
+                        player.posicao = player.checkpoint[:]
+                        player.vida = 100  
+                        player.pontos = 0  
                         mapa[inimigo.posicao[0]][inimigo.posicao[1]] = 'I'
                         pygame.mixer.music.stop()
 
-                        # Retomar a música de fundo
-                        music_path = os.path.join(os.path.dirname(__file__), "mairo_music.mp3")
-                        music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
-                        return True  # Continuar o jogo
-                    else:
-                        stdscr.addstr(1, 0, "Você precisa passar pelo Checkpoint para salvar o jogo!")
-                        stdscr.refresh()
-                        curses.napms(3000) 
-                        player.vida = 100  # Restaurar a vida
-                        player.pontos = 0
-                        player.posicao = [0,0]
-                        pygame.mixer.music.stop()
-
-                        # Retomar a música de fundo
                         music_path = os.path.join(os.path.dirname(__file__), "mario_music.mp3")
                         music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
-                        return True  # Finalizar o jogo 
-                        
+                        return True  
+                    else:
+                        stdscr.addstr(1, 0, "Você precisa passar pelo Checkpoint!")
+                        stdscr.refresh()
+                        curses.napms(3000)
+                        player.vida = 100
+                        player.pontos = 0
+                        player.posicao = [0, 0]
+                        pygame.mixer.music.stop()
+
+                        music_path = os.path.join(os.path.dirname(__file__), "mario_music.mp3")
+                        music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
+                        return True  
                         
                 elif key == ord('n') or key == ord('N'):
-                    return False  # Finalizar o jogo
+                    return False  
                 else:
-                    stdscr.addstr(1, 0, "Escolha inválida! Pressione S para continuar ou N para sair.")
+                    stdscr.addstr(1, 0, "Escolha inválida! Pressione S ou N.")
                     stdscr.refresh()
-                    curses.napms(1000)  # Espera 1 segundo para dar tempo de ver a mensagem
+                    curses.napms(1000)  
 
-        # Aguarda o jogador pressionar qualquer tecla para continuar a batalha
         stdscr.refresh()
-        curses.napms(1000)  # Tempo de espera para que o jogador veja o resultado do ataque
+        curses.napms(1000)
 
-        # Se o inimigo não foi derrotado, ele ataca Mario
         if not inimigo.derrotado:
             dano_inimigo = inimigo.atacar()
             player.vida -= dano_inimigo
-            stdscr.addstr(9, 0, f"{inimigo.nome} ataca {player.anem} e causa {dano_inimigo} de dano!")
-     
+            stdscr.addstr(16, 0, f"{inimigo.nome} atacou {player.nome} causando {dano_inimigo} de dano!")
+            stdscr.refresh()
 
     return True
 
 
-# Função para iniciar o jogo
 def jogo(stdscr, player, fase):
     curses.curs_set(0)  # Desabilitar o cursor
     stdscr.nodelay(1)  # Não bloquear na espera de uma tecla
@@ -221,98 +187,123 @@ def jogo(stdscr, player, fase):
     fim_fase = [7, 7]  # Definição do final da fase
 
     # Criando o mapa (matriz) 8x8
-    # Gerar mapa 
-
-    mapa = [[0 for _ in range(8)] for _ in range(8)]  # Criação do mapa 8x8
+    mapa = gera_matriz()
     player.mapa = mapa  # Definindo o mapa do jogador
-    inimigos = get_inimigos_by_fase(fase.id, mapa)  # Passando o mapa para a função que retorna os inimigos
-    blocos = get_blocos_by_fase(fase.id, mapa)  # Passando o mapa para a função que retorna os blocos
+    inimigos = get_inimigo_by_fase(fase.id, mapa)  # Pegando inimigos na fase
+    blocos = get_blocos_by_fase(fase.id, mapa)  # Pegando blocos na fase
 
     pygame.mixer.init()
-    pygame.mixer.set_num_channels(2) 
+    pygame.mixer.set_num_channels(2)
 
     music_channel = pygame.mixer.Channel(0)
     music_path = os.path.join(os.path.dirname(__file__), "mario_music.mp3")
-    music_channel.play(pygame.mixer.Sound(music_path), loops=-1)  
+    music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
 
-    # Fase inicial: escolha da direção
     stdscr.clear()
-    stdscr.addstr(0, 0, "Escolha a direção de Mario para começar a fase:")
+    stdscr.addstr(0, 0, f"Escolha a direção de {player.nome} para começar a fase:")
     stdscr.addstr(1, 0, "Pressione as setas esquerda (←) ou direita (→) para escolher")
     stdscr.refresh()
 
     while True:
         key = stdscr.getch()
-        if key == curses.KEY_RIGHT:  # Ir para a direita
+        if key == curses.KEY_RIGHT:
             player.posicao = [0, 0]
             break
-        elif key == curses.KEY_LEFT:  # Ir para a esquerda
+        elif key == curses.KEY_LEFT:
             player.posicao = [7, 0]
             break
 
-    # Jogo continua após escolha da direção
     while player.vida > 0:
-        exibir_mapa(stdscr, player, mapa)  # Exibe o mapa com Mario
+        exibir_mapa(stdscr, player, mapa)
 
-        # Verificando se Mario chegou ao final da fase
+        # Verifica se o jogador chegou ao fim da fase
         if player.posicao == fim_fase:
             player.pontos += 100
             stdscr.clear()
-            stdscr.addstr(0, 0, f"Parabéns! Mario completou a fase com {player.pontos} pontos!")
+            stdscr.addstr(0, 0, f"Parabéns! {player.nome} completou a fase com {player.pontos} pontos!")
             stdscr.refresh()
-            curses.napms(2000)  # Espera 2 segundos para o jogador ver a mensagem
+            curses.napms(2000)
 
-            # Parar a música de fundo
             music_channel.stop()
 
-            # Tocar a música de encerramento
             music_path = os.path.join(os.path.dirname(__file__), "music_ending.mp3")
             pygame.mixer.music.load(music_path)
             pygame.mixer.music.play()
 
-            # Esperar até que a música termine
             while pygame.mixer.music.get_busy():
                 pygame.time.Clock().tick(10)
-            break  # Fim do jogo
+            return "venceu"
 
-        # Verificando se Mario encontrou o cogumelo
-        if player.posicao == cogumelo_posicao and not cogumelo_coletado:
-            player.vida += 50
-            stdscr.addstr(10, 0, f"Mario encontrou um cogumelo! Vida aumentada para {player.vida}!")
-            stdscr.refresh()
+        row = 10
 
-            # Toca o som de vida no canal 1
-            sound_channel = pygame.mixer.Channel(1)
-            life_sound_path = os.path.join(os.path.dirname(__file__), "life.mp3")
-            sound_channel.play(pygame.mixer.Sound(life_sound_path))
+        for bloco in blocos:
+            if player.posicao == bloco.posicao:
+                player.pontos += 10
+                stdscr.addstr(row, 0, f"{player.nome} encontrou um bloco!")
+                row += 1
+                stdscr.addstr(row, 0, "[1] Bater no bloco")
+                row += 1
+                stdscr.addstr(row, 0, "[2] Ignorar bloco")
+                stdscr.refresh()
 
-            curses.napms(2000)  # Espera 2 segundos para o jogador ver a mensagem
+                sound_channel = pygame.mixer.Channel(1)
+                block_hit_sound = os.path.join(os.path.dirname(__file__), "block_hit.mp3")
+                sound_channel.play(pygame.mixer.Sound(block_hit_sound))
 
-            mapa[cogumelo_posicao[0]][cogumelo_posicao[1]] = '.'  # Remove o cogumelo do mapa
-            cogumelo_coletado = True
+                curses.napms(1000)
 
+                choice = stdscr.getkey()
+
+                if choice == "1": 
+                    stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
+                    stdscr.refresh()
+                    stdscr.getch()
+
+                    item_description = get_block_item(bloco, player)
+
+                    if item_description:
+                        stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
+                        row += 1
+                    else:
+                        stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
+
+                    stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
+                    inventory_items = get_inventory_items(player.id)
+                    if isinstance(inventory_items, list):
+                        for i, item in enumerate(inventory_items):
+                            stdscr.addstr(row + 5 + i, 0, f"{item.tipo} (Efeito: {item.efeito}) - {item.quantidade} unidades")
+                    else:
+                        stdscr.addstr(row + 5, 0, inventory_items)
+
+                    mapa[bloco.posicao[0]][bloco.posicao[1]] = '.'
+                    blocos.remove(bloco) 
+                    break
+
+                elif choice == "2": 
+                    stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
+                    stdscr.refresh()
+                    stdscr.getch()
+                    break 
         key = stdscr.getch()
 
-        if key == curses.KEY_UP:  # Mover para cima
+        if key == curses.KEY_UP:
             player.mover("UP", mapa)
-        elif key == curses.KEY_DOWN:  # Mover para baixo
+        elif key == curses.KEY_DOWN:
             player.mover("DOWN", mapa)
-        elif key == curses.KEY_LEFT:  # Mover para esquerda
+        elif key == curses.KEY_LEFT:
             player.mover("LEFT", mapa)
-        elif key == curses.KEY_RIGHT:  # Mover para direita
+        elif key == curses.KEY_RIGHT:
             player.mover("RIGHT", mapa)
 
-        # Se Mario encontrar inimigo, batalha
+        # Verifica se encontrou um inimigo
         for inimigo in inimigos:
             if player.posicao == inimigo.posicao:
                 batalha_ativa = turno_batalha(stdscr, player, inimigo, mapa, music_channel)
                 if not batalha_ativa:
-                    break  # Sai do jogo se o jogador escolher não continuar
+                    break
 
     stdscr.clear()
-    stdscr.addstr(0, 0, "Fase 1 finalizada!")
+    stdscr.addstr(0, 0, "Game Over! Você perdeu todas as vidas.")
     stdscr.refresh()
-    curses.napms(2000)  # Espera 2 segundos para o jogador ver a mensagem
-
-if __name__ == "__main__":
-    curses.wrapper(jogo)
+    curses.napms(2000)
+    return "perdeu"

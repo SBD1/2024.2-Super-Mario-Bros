@@ -44,6 +44,24 @@ class Loja:
     def __repr__(self):
         return f"Loja(id={self.id}, name={self.name}, items={self.items})"
 
+def get_lojaId_by_world(wordl):
+    connection = connect_to_db()
+    if not connection:
+        return None
+    
+    try:
+        with connection.cursor() as cursor:
+            query = "SELECT idLoja FROM Mundo WHERE idMundo = %s"
+            cursor.execute(query, (id_mundo,))
+            result = cursor.fetchone()
+            
+            return result[0] if result else None  # Retorna apenas o idLoja ou None se não existir
+    except Exception as e:
+        print(f"Erro ao executar consulta: {e}")
+        return None
+    finally:
+        connection.close()
+
 def get_loja_with_items(id_loja):
     connection = connect_to_db()
     if not connection:
