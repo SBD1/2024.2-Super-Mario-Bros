@@ -27,25 +27,23 @@ CREATE TABLE Moeda (
     CONSTRAINT moeda_pk PRIMARY KEY (idMoeda)
 );
 
+CREATE TABLE Loja (
+    idLoja SERIAL NOT NULL,
+    nome VARCHAR(50) NOT NULL,
+    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
+);
+
 CREATE TABLE Mundo (
     idMundo SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
+    idLoja INTEGER NOT NULL,
     descrição TEXT,
     nivel INTEGER NOT NULL,
-    CONSTRAINT mundo_pk PRIMARY KEY (idMundo)
+    CONSTRAINT mundo_pk PRIMARY KEY (idMundo),
+    CONSTRAINT loja_item_loja_fk FOREIGN KEY (idLoja) REFERENCES Loja(idLoja) ON DELETE CASCADE
 );
 
-CREATE TABLE Bloco (
-    idBloco SERIAL NOT NULL,
-    tipo VARCHAR(30) NOT NULL,
-    idItem INTEGER,
-    idYoshi INTEGER,
-    idMoeda INTEGER,
-    CONSTRAINT bloco_pk PRIMARY KEY (idBloco),
-    FOREIGN KEY (idItem) REFERENCES Item(idItem) ON DELETE SET NULL,
-    FOREIGN KEY (idYoshi) REFERENCES Yoshi(idYoshi) ON DELETE SET NULL,
-    FOREIGN KEY (idMoeda) REFERENCES Moeda(idMoeda) ON DELETE SET NULL  
-);
+
 
 CREATE TABLE Fase (
     idFase SERIAL NOT NULL,
@@ -56,16 +54,24 @@ CREATE TABLE Fase (
     FOREIGN KEY (idMundo) REFERENCES Mundo(idMundo)
 );
 
+CREATE TABLE Bloco (
+    idBloco SERIAL NOT NULL,
+    tipo VARCHAR(30) NOT NULL,
+    idItem INTEGER,
+    idYoshi INTEGER,
+    idMoeda INTEGER,
+    idFase INTEGER, -- Removendo o NOT NULL
+    CONSTRAINT bloco_pk PRIMARY KEY (idBloco),
+    FOREIGN KEY (idItem) REFERENCES Item(idItem) ON DELETE SET NULL,
+    FOREIGN KEY (idYoshi) REFERENCES Yoshi(idYoshi) ON DELETE SET NULL,
+    FOREIGN KEY (idMoeda) REFERENCES Moeda(idMoeda) ON DELETE SET NULL,
+    FOREIGN KEY (idFase) REFERENCES Fase(idFase) 
+);
+
 CREATE TABLE Checkpoint (
     idCheckpoint SERIAL NOT NULL,
     pontuação INTEGER NOT NULL,
     CONSTRAINT checkpoint_pk PRIMARY KEY (idCheckpoint)
-);
-
-CREATE TABLE Loja (
-    idLoja SERIAL NOT NULL,
-    nome VARCHAR(50) NOT NULL,
-    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
 );
 
 CREATE TABLE LojaItem (

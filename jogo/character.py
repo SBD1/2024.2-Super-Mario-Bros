@@ -11,6 +11,9 @@ pygame.init()
 
 pygame.mixer.init()
 
+import random
+import curses  # Certifique-se de que o módulo curses esteja importado se você estiver usando-o
+
 class Character:
     def __init__(self, id_character, name, vida, dano, pontos, id_local, tipo_jogador, moeda):
         self.id = id_character
@@ -22,6 +25,8 @@ class Character:
         self.tipo_jogador = tipo_jogador
         self.moeda = moeda
         self.posicao = [1, 1]
+        self.checkpoint = [1, 1]  # Inicializa o checkpoint na mesma posição inicial
+        self.salvou_checkpoint = False  # Inicializa a flag que verifica se o checkpoint foi salvo
         self.mapa = None 
 
     def gerar_posicao_aleatoria(self, mapa):
@@ -46,13 +51,13 @@ class Character:
         # Verifica se a nova posição está dentro dos limites da matriz
         if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]):
             self.posicao = nova_posicao
-            print(f"Mario se moveu para {self.posicao}")
+            # print(f"Mario se moveu para {self.posicao}")
             
             # Verifica se Mario passou pela posição do checkpoint
             if self.posicao == self.checkpoint and not self.salvou_checkpoint:
                 self.salvou_checkpoint = True
                 print("Checkpoint salvo!")
-                curses.napms(1000)  # Espera 2 segundos para dar tempo de ver a mensagem
+                curses.napms(1000)  # Espera 1 segundo para dar tempo de ver a mensagem
         else:
             print("Movimento inválido!")
 
@@ -98,33 +103,6 @@ class Character:
             inimigo.perder_vida(dano_pulo)
             print(f"{inimigo.nome} sofreu {dano_pulo} de dano pelo pulo!")
 
-class Inimigo:
-    def __init__(self, nome, vida, dano, pontos, id_local, tipo, habilidade, mapa):
-        self.nome = nome
-        self.vida = vida
-        self.dano = dano
-        self.pontos = pontos
-        self.id_local = id_local
-        self.tipo = tipo
-        self.habilidade = habilidade
-        self.posicao = self.gerar_posicao_aleatoria(mapa)  # Posição aleatória para o inimigo
-        self.derrotado = False  # Indica se o inimigo foi derrotado
-
-    def gerar_posicao_aleatoria(self, mapa):
-        while True:
-            x = random.randint(0, len(mapa) - 1)
-            y = random.randint(0, len(mapa[0]) - 1)
-            if mapa[x][y] != 'M' and mapa[x][y] != 'C':  # Garantir que a posição não seja ocupada por Mario ou pelo checkpoint
-                return [x, y]
-
-    def atacar(self):
-        return self.dano
-
-    def perder_vida(self, dano):
-        self.vida -= dano
-        if self.vida <= 0:
-            self.derrotado = True  # Marca como derrotado quando a vida chegar a zero
-
 def get_characters_from_db():
     connection = connect_to_db()
     if not connection:
@@ -166,44 +144,6 @@ def get_characters_from_db():
         connection.close()
 
 
-def get_inimigo_from_db(id_personagem, mapa):
-    """Retorna um objeto Inimigo do banco de dados com base no idPersonagem."""
-    connection = connect_to_db()
-    if not connection:
-        return None
-
-    try:
-        with connection.cursor() as cursor:
-            query = """
-            SELECT p.nome, p.vida, p.dano, p.pontos, p.idFase, i.tipo, i.habilidade
-            FROM Personagem p
-            JOIN Inimigo i ON p.idPersonagem = i.idPersonagem
-            WHERE p.idPersonagem = %s AND p.tipoJogador = 'Inimigo'
-            """
-            cursor.execute(query, (id_personagem,))
-            inimigo_data = cursor.fetchone()
-
-        if not inimigo_data:
-            return None  # Retorna None se o inimigo não for encontrado
-
-        # Criando e retornando um objeto Inimigo
-        return Inimigo(
-            nome=inimigo_data[0],
-            vida=inimigo_data[1],
-            dano=inimigo_data[2],
-            pontos=inimigo_data[3],
-            id_local=inimigo_data[4],
-            tipo=inimigo_data[5],
-            habilidade=inimigo_data[6],
-            mapa=mapa
-        )
-
-    except Exception as e:
-        print(f"Erro ao buscar inimigo: {e}")
-        return None
-    finally:
-        connection.close()
-
 def choose_character(stdscr):
     """Exibe a tela para o jogador escolher o personagem."""
 
@@ -231,19 +171,26 @@ def choose_character(stdscr):
             chosen_index = key - ord('1')
             return characters[chosen_index]
         
-def get_block_item(id_bloco, player):
+def get_block_item(encounter, player):
     """Retorna o item escondido dentro de um bloco e o adiciona ao inventário do jogador."""
     connection = connect_to_db()
     if not connection:
         return "Erro ao conectar ao banco de dados."
 
     try:
+        # Verifica se `encounter` é um objeto Bloco e extrai o ID do bloco
+        if hasattr(encounter, 'id_bloco'):
+            id_bloco = encounter.id_bloco
+        else:
+            return "Erro: O objeto 'encounter' não é um Bloco válido."
+
         with connection.cursor() as cursor:
             query = """
             SELECT 
                 i.idItem AS id_item,  -- Agora retornando o idItem
-                i.tipo AS item, 
-                y.nome AS yoshi, 
+                i.tipo AS item,
+                y.idYoshi as id_yoshi, 
+                y.nome AS yoshi,
                 m.valor AS moeda 
             FROM Bloco b
             LEFT JOIN Item i ON b.idItem = i.idItem
@@ -251,15 +198,46 @@ def get_block_item(id_bloco, player):
             LEFT JOIN Moeda m ON b.idMoeda = m.idMoeda
             WHERE b.idBloco = %s
             """
-            cursor.execute(query, (id_bloco,))
+            cursor.execute(query, (id_bloco,))  # Passa o ID do bloco como um valor primitivo
             result = cursor.fetchone()
 
         if not result:
             return "O bloco está vazio."
 
-        id_item, item, yoshi, moeda = result
+        id_item, item, id_yoshi, yoshi, moeda = result
         if item:
             item_name = item
+            
+            quantidade = 1
+
+            with connection.cursor() as cursor:
+                # Verifica se o jogador já possui o item no inventário
+                check_query = """
+                    SELECT idInventario, quantidade
+                    FROM Inventario
+                    WHERE idItem = %s AND idpersonagem = %s
+                """
+                cursor.execute(check_query, (id_item, player.id))  # Garanta que 'player.id' esteja correto
+                existing_item = cursor.fetchone()
+
+                if existing_item:
+                    # Se já existe, atualiza a quantidade
+                    new_quantity = existing_item[1] + quantidade
+                    update_query = """
+                    UPDATE Inventario
+                    SET quantidade = %s
+                    WHERE idInventario = %s
+                    """
+                    cursor.execute(update_query, (new_quantity, existing_item[0]))
+                else:
+                    # Se não existe, insere o novo item no inventário
+                    insert_query = """
+                    INSERT INTO Inventario (quantidade, idItem, idpersonagem)
+                    VALUES (%s, %s, %s)  -- Aqui garantimos que 'idpersonagem' seja passado
+                    """
+                    cursor.execute(insert_query, (quantidade, id_item, player.id))  # Insira o id do personagem aqui
+
+            connection.commit()
         elif yoshi:
             item_name = f"Yoshi: {yoshi}"
             with connection.cursor() as cursor:
@@ -268,7 +246,7 @@ def get_block_item(id_bloco, player):
                 SET idYoshi = %s
                 WHERE idPersonagem = %s
                 """
-                cursor.execute(update_yoshi_query, (yoshi, player.id)) 
+                cursor.execute(update_yoshi_query, (id_yoshi, player.id)) 
                 connection.commit()
         elif moeda:
             item_name = f"{moeda} moedas"
@@ -302,38 +280,7 @@ def get_block_item(id_bloco, player):
         else:
             return "O bloco está vazio."
 
-        # Definir a quantidade inicial (supondo que seja 1)
-        quantidade = 1
-
-        # Adiciona o idItem e a quantidade ao inventário do jogador
-        with connection.cursor() as cursor:
-            # Verifica se o jogador já possui o item no inventário
-            check_query = """
-            SELECT idInventario, quantidade
-            FROM Inventario
-            WHERE idItem = %s AND idpersonagem = %s
-            """
-            cursor.execute(check_query, (id_item, player.id))  # Garanta que 'player.id' esteja correto
-            existing_item = cursor.fetchone()
-
-            if existing_item:
-                # Se já existe, atualiza a quantidade
-                new_quantity = existing_item[1] + quantidade
-                update_query = """
-                UPDATE Inventario
-                SET quantidade = %s
-                WHERE idInventario = %s
-                """
-                cursor.execute(update_query, (new_quantity, existing_item[0]))
-            else:
-                # Se não existe, insere o novo item no inventário
-                insert_query = """
-                INSERT INTO Inventario (quantidade, idItem, idpersonagem)
-                VALUES (%s, %s, %s)  -- Aqui garantimos que 'idpersonagem' seja passado
-                """
-                cursor.execute(insert_query, (quantidade, id_item, player.id))  # Insira o id do personagem aqui
-
-            connection.commit()
+        
 
         return f" {item_name}!"
 
@@ -375,116 +322,6 @@ def get_inventory_items(player_id):
         connection.close()
 
 
-# def player_turn(stdscr, player, encounter):
-#     mapa = None  # Inicializa a variável antes de usá-la
-
-#     while True:
-#         stdscr.clear()  # Limpa a tela a cada novo turno
-#         row = 0
-
-#         # Exibe detalhes do encontro
-#         if encounter.get('Personagem') is not None:
-#             if encounter.get('Personagem').get('tipo') == 'NPC':
-#                 stdscr.addstr(row, 0, "Você encontrou um NPC")
-#                 row += 1
-#                 stdscr.addstr(row, 0, "[1] Conversar")
-#                 row += 1
-#                 stdscr.addstr(row, 0, "[2] Ignorar")
-#             if encounter.get('Personagem').get('tipo') == 'Inimigo':
-#                 stdscr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
-#                 stdscr.refresh()
-#                 stdscr.getch() 
-
-#                 mapa = gera_matriz(linhas=8, colunas=8)
-#                 items = get_inventory_items(player.id)
-#                 inimigo = get_inimigo_from_db(encounter.get('Personagem').get('id'), items)
-#                 turno_batalha(stdscr, player, inimigo, mapa, items)
-
-#         row += 1  # Avança a linha
-
-#         if encounter.get('Loja') is not None:
-#             stdscr.addstr(row, 0, "Você encontrou uma loja!")
-#             row += 1
-#             stdscr.addstr(row, 0, "[1] Comprar")
-#             row += 1
-#             stdscr.addstr(row, 0, "[2] Vender")
-
-#             choice = stdscr.getkey()
-
-#         if encounter.get('Bloco') is not None:
-#             stdscr.addstr(row, 0, "Você encontrou um bloco!")
-#             row += 1
-#             stdscr.addstr(row, 0, "[1] Bater no bloco")
-#             row += 1
-#             stdscr.addstr(row, 0, "[2] Ignorar bloco")
-#             stdscr.refresh()
-
-#             choice = stdscr.getkey()
-
-#         if encounter.get('CheckPoint!') is not None:
-#             stdscr.addstr(row, 0, "Você encontrou um CheckPoint!")
-#             row += 1
-#             stdscr.addstr(row, 0, "CheckPoint Ativado!")
-#             active_checkpoint(player)
-
-#         if choice == "1" and encounter.get('Bloco') is not None:  # Jogador escolheu bater no bloco
-#             stdscr.clear()  # Limpa a tela para a próxima mensagem
-#             stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
-#             stdscr.refresh()
-#             stdscr.getch()  # Pausa para dar efeito
-
-#             item_description = get_block_item(encounter.get('Bloco'), player)  # Obtém o item do bloco e adiciona ao inventário
-            
-#             if item_description:
-#                 stdscr.clear()  # Limpa a tela antes de mostrar a próxima mensagem
-#                 stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
-#                 row += 1
-#             else:
-#                 stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
-
-#             # Exibindo os itens no inventário após o item do bloco ser encontrado
-#             stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
-#             inventory_items = get_inventory_items(player.id)
-#             if isinstance(inventory_items, list):
-#                 for i, item in enumerate(inventory_items):
-#                     stdscr.addstr(row + 5 + i, 0, f"{item.tipo} (Efeito: {item.efeito}) - {item.quantidade} unidades")
-#             else:
-#                 stdscr.addstr(row + 5, 0, inventory_items)
-
-#             stdscr.refresh()
-#             stdscr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
-
-#             stdscr.clear()  # Limpa a tela antes de mostrar a batalha
-#             stdscr.addstr(row + 6, 0, "Prepare-se para a batalha!")
-#             stdscr.refresh()
-#             stdscr.getch()  # Pausa para dar um pouco de tempo
-
-#             mapa = exibir_mapa(stdscr, player, mapa)
-#             # Pegando o mapa
-#             music_channel = pygame.mixer.Channel(0)
-
-#             # Chama a função de batalha
-#             turno_batalha(stdscr, player, inimigo, mapa, music_channel)
-
-#         elif choice == "2" and encounter.get('Bloco') is not None:  # Jogador escolheu ignorar o bloco
-#             stdscr.clear()  # Limpa a tela antes de mostrar a mensagem de ignorar
-#             stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
-#             stdscr.refresh()
-#             stdscr.getch()
-#             return
-        
-#         if choice == "1" and encounter.get('Loja') is not None:
-#             loja = get_loja_with_items(encounter.get('Loja'))
-#             comprar_item(stdscr, player, loja)
-#         elif choice == "2" and encounter.get('Loja') is not None:
-#             loja = get_loja_with_items(encounter.get('Loja'))
-#             vender_item(stdscr, player.id, loja)
-
-        
-#         # Ação de checkpoint e outras interações seguem aqui...
-
-#         stdscr.refresh()
-#         stdscr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop        
 
 def insert_item_into_inventory(player_id, item_id, quantity):
         connection = connect_to_db()
@@ -507,33 +344,6 @@ def insert_item_into_inventory(player_id, item_id, quantity):
 
         finally:
             connection.close()
-
-
-        stdcsr.refresh()
-        choice = stdcsr.getkey()
-
-        if choice == "1":
-            if encounter.get('Loja') is not None:
-                stdcsr.addstr(row + 2, 0, "Você escolheu comprar algo da loja.")
-                itens = get_shop_itens(encounter.get('Loja'))
-
-            elif encounter.get('Bloco') is not None:
-                stdcsr.addstr(row + 2, 0, "Você bateu no bloco.")
-                item = get_block_item(encounter.get('Bloco'))
-
-        elif choice == "2":
-            if encounter.get('Loja') is not None:
-                stdcsr.addstr(row + 2, 0, "Você escolheu vender algo da loja.")
-                itens = get_inventario_itens(player.id)
-                # Fazer a interação de tirar o item do inventário e vender para ganhar moedas
-            elif encounter.get('Bloco') is not None:
-                stdcsr.addstr(row + 2, 0, "Você ignorou o bloco.")
-
-        else:
-            stdcsr.addstr(row + 2, 0, "Escolha inválida. Tente novamente.")
-
-        stdcsr.refresh()
-        stdcsr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop
 
 # def active_checkpoint(player):
 #     player.last_checkpoint = player.position.copy()  # Salva a posição do jogador no último checkpoint

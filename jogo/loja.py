@@ -41,10 +41,7 @@ class Loja:
         self.name = name
         self.items = items
 
-    def __repr__(self):
-        return f"Loja(id={self.id}, name={self.name}, items={self.items})"
-
-def get_lojaId_by_world(wordl):
+def get_lojaId_by_world(id_mundo):
     connection = connect_to_db()
     if not connection:
         return None
@@ -71,13 +68,15 @@ def get_loja_with_items(id_loja):
         with connection.cursor() as cursor:
             loja_query = "SELECT idLoja, nome FROM Loja WHERE idLoja = %s"
             cursor.execute(loja_query, (id_loja,))
+
             loja_data = cursor.fetchone()
             
             if not loja_data:
-                return f"Nenhuma loja encontrada com idLoja = {id_loja}."
-
+                # Retorna um objeto Loja com valores padrão se a loja não for encontrada
+                return Loja(id_loja, loja_data[1], [])
+            
             item_query = """
-                SELECT I.idItem, I.tipo, I.efeito, I.duracao, I.raridade, LI.quantidade
+                SELECT I.idItem, I.tipo, I.efeito, I.duração, I.raridade, LI.quantidade
                 FROM LojaItem LI
                 JOIN Item I ON LI.idItem = I.idItem
                 WHERE LI.idLoja = %s
@@ -90,10 +89,9 @@ def get_loja_with_items(id_loja):
         return loja
     except Exception as e:
         print(f"Erro ao executar consulta: {e}")
-        return None
+        return Loja(id_loja, "Loja Desconhecida", [])  # Retorna um objeto Loja com valores padrão em caso de erro
     finally:
         connection.close()
-
 def get_player_inventory(player_id):
     connection = connect_to_db()
     if not connection:
@@ -102,7 +100,7 @@ def get_player_inventory(player_id):
     try:
         with connection.cursor() as cursor:
             query = """
-            SELECT I.idItem, I.tipo, I.efeito, I.duracao, I.raridade, Inv.quantidade
+            SELECT I.idItem, I.tipo, I.efeito, I.duração, I.raridade, Inv.quantidade
             FROM Inventario Inv
             JOIN Item I ON Inv.idItem = I.idItem
             WHERE Inv.idpersonagem = %s
@@ -117,29 +115,53 @@ def get_player_inventory(player_id):
     finally:
         connection.close()
 
-def comprar_item(stdscr, player, loja):
+def comprar_item(stdscr, player, id_loja):
+    # Obtém a loja com base no id_loja
+    loja = get_loja_with_items(id_loja)
+    
+    if not isinstance(loja, Loja):
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Erro: Loja inválida.")
+        stdscr.refresh()
+        stdscr.getch()
+        return
+    
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Bem-vindo à {loja.name}!")
+    stdscr.addstr(0, 0, f"Bem-vindo à {loja.name}!")  # Agora exibe o nome da loja corretamente
     stdscr.addstr(1, 0, "Itens disponíveis para compra:")
+    stdscr.refresh()
+
     row = 2
+    if not loja.items:
+        stdscr.addstr(row, 0, "Nenhum item disponível na loja.")
+        stdscr.refresh()
+        stdscr.getch()
+        return
+    
+    # Exibe os itens disponíveis na loja
     for idx, item in enumerate(loja.items):
         stdscr.addstr(row, 0, f"{idx + 1}. {item.tipo} ({item.raridade}) - {item.efeito} | Duração: {item.duracao} | Quantidade: {item.quantidade} | Preço: {item.preco}")
         row += 1
+    
     stdscr.addstr(row, 0, "Escolha um item pelo número ou pressione 'q' para sair:")
     stdscr.refresh()
-    
+
     choice = stdscr.getch()
     if choice == ord('q'):
         return
     
-    choice = int(chr(choice)) - 1
-    if 0 <= choice < len(loja.items):
-        item_escolhido = loja.items[choice]
-        adicionar_ao_inventario(player, item_escolhido)
-        loja.items.pop(choice)
-        stdscr.addstr(row + 1, 0, f"Você comprou {item_escolhido.tipo}!")
-    else:
-        stdscr.addstr(row + 1, 0, "Escolha inválida.")
+    try:
+        choice = int(chr(choice)) - 1  # Converte a escolha para um índice
+        if 0 <= choice < len(loja.items):
+            item_escolhido = loja.items[choice]
+            adicionar_ao_inventario(player, item_escolhido)
+            loja.items.pop(choice)  # Remove o item da loja após a compra
+            stdscr.addstr(row + 1, 0, f"Você comprou {item_escolhido.tipo}!")
+        else:
+            stdscr.addstr(row + 1, 0, "Escolha inválida.")
+    except ValueError:
+        stdscr.addstr(row + 1, 0, "Escolha inválida. Por favor, digite um número.")
+
     stdscr.refresh()
     stdscr.getch()
 
@@ -147,13 +169,13 @@ def vender_item(stdscr, player_id, loja):
     inventario = get_player_inventory(player_id)
     
     stdscr.clear()
+    
     stdscr.addstr(0, 0, "Seu inventário:")
     row = 1
     for idx, item in enumerate(inventario):
         stdscr.addstr(row, 0, f"{idx + 1}. {item.tipo} ({item.raridade}) - Preço de venda: {item.preco // 2}")
         row += 1
-    stdscr.addstr(row, 0, "Escolha um item para vender pelo número ou pressione 'q' para sair:")
-    stdscr.refresh()
+    
     
     choice = stdscr.getch()
     if choice == ord('q'):

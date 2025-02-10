@@ -82,7 +82,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
         return True
 
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Início do turno de {player.nome}! Vida: {player.vida}, Pontos: {player.pontos}")
+    stdscr.addstr(0, 0, f"Início do turno de {player.name}! Vida: {player.vida}, Pontos: {player.pontos}")
     stdscr.addstr(1, 0, f"Inimigo: {inimigo.nome}, Vida: {inimigo.vida}")
     stdscr.addstr(3, 0, "Escolha sua ação: [Q] Pular, [E] Desviar")
     
@@ -99,6 +99,8 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
             item = items[chosen_index]
             dano = player.atacar(item, inimigo)
             stdscr.addstr(10, 0, f"{inimigo.nome} sofreu {dano} de dano pelo {item.tipo}!")
+            player.pontos += inimigo.pontos
+            break
         
         elif key == ord('q') or key == ord('Q'):
             inimigo.perder_vida(inimigo.vida) 
@@ -120,7 +122,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
             return True  
 
         if player.vida <= 0:
-            stdscr.addstr(14, 0, f"{player.nome} perdeu toda a sua vida. Game Over!")
+            stdscr.addstr(14, 0, f"{player.name} perdeu toda a sua vida. Game Over!")
             stdscr.refresh()
             curses.napms(2000)
 
@@ -138,8 +140,8 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
                 if key == ord('s') or key == ord('S'):
                     if player.salvou_checkpoint:
                         player.posicao = player.checkpoint[:]
-                        player.vida = 100  
-                        player.pontos = 0  
+                        player.vida = 100 
+ 
                         mapa[inimigo.posicao[0]][inimigo.posicao[1]] = 'I'
                         pygame.mixer.music.stop()
 
@@ -151,7 +153,6 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
                         stdscr.refresh()
                         curses.napms(3000)
                         player.vida = 100
-                        player.pontos = 0
                         player.posicao = [0, 0]
                         pygame.mixer.music.stop()
 
@@ -172,7 +173,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
         if not inimigo.derrotado:
             dano_inimigo = inimigo.atacar()
             player.vida -= dano_inimigo
-            stdscr.addstr(16, 0, f"{inimigo.nome} atacou {player.nome} causando {dano_inimigo} de dano!")
+            stdscr.addstr(16, 0, f"{inimigo.nome} atacou {player.name} causando {dano_inimigo} de dano!")
             stdscr.refresh()
 
     return True
@@ -220,7 +221,7 @@ def entrar_fase(stdscr, player, fase):
         if player.posicao == fim_fase:
             player.pontos += 100
             stdscr.clear()
-            stdscr.addstr(0, 0, f"Parabéns! {player.nome} completou a fase com {player.pontos} pontos!")
+            stdscr.addstr(0, 0, f"Parabéns! {player.name} completou a fase com {player.pontos} pontos!")
             stdscr.refresh()
             curses.napms(2000)
 
@@ -239,7 +240,7 @@ def entrar_fase(stdscr, player, fase):
         for bloco in blocos:
             if player.posicao == bloco.posicao:
                 player.pontos += 10
-                stdscr.addstr(row, 0, f"{player.nome} encontrou um bloco!")
+                stdscr.addstr(row, 0, f"{player.name} encontrou um bloco!")
                 row += 1
                 stdscr.addstr(row, 0, "[1] Bater no bloco")
                 row += 1
@@ -247,36 +248,56 @@ def entrar_fase(stdscr, player, fase):
                 stdscr.refresh()
 
                 sound_channel = pygame.mixer.Channel(1)
-                block_hit_sound = os.path.join(os.path.dirname(__file__), "block_hit.mp3")
-                sound_channel.play(pygame.mixer.Sound(block_hit_sound))
+             #   block_hit_sound = os.path.join(os.path.dirname(__file__), "block_hit.mp3")
+             #  sound_channel.play(pygame.mixer.Sound(block_hit_sound))
 
-                curses.napms(1000)
-
+                curses.napms(3000)
                 choice = stdscr.getkey()
 
-                if choice == "1": 
+                if choice == "1":
                     stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
                     stdscr.refresh()
-                    stdscr.getch()
+                    stdscr.getch()  # Pausa para o usuário ler a mensagem
 
                     item_description = get_block_item(bloco, player)
+                    stdscr.addstr(row + 1, 0, f"{item_description}")
+                    curses.napms(3000)
+                    stdscr.refresh()
+                    stdscr.refresh()  # Atualiza a tela para exibir a descrição do item
 
                     if item_description:
                         stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
                         row += 1
+                        curses.napms(3000)
+                        stdscr.refresh()
                     else:
                         stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
+                        curses.napms(3000)
+                        stdscr.refresh()
+                    
+                    stdscr.refresh()  # Atualiza a tela para exibir a mensagem de encontro
+                    stdscr.getch()  # Pausa para o usuário ler a mensagem
 
-                    stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
+                    stdscr.addstr(row, 0, "Itens no seu inventário:")
+                    curses.napms(3000)
+                    stdscr.refresh()  # Atualiza a tela para exibir o cabeçalho do inventário
+
                     inventory_items = get_inventory_items(player.id)
                     if isinstance(inventory_items, list):
                         for i, item in enumerate(inventory_items):
                             stdscr.addstr(row + 5 + i, 0, f"{item.tipo} (Efeito: {item.efeito}) - {item.quantidade} unidades")
+                            curses.napms(3000)
+                            stdscr.refresh()
                     else:
                         stdscr.addstr(row + 5, 0, inventory_items)
+                        curses.napms(3000)
+                        stdscr.refresh()
+                    
+                    stdscr.refresh()  # Atualiza a tela para exibir os itens do inventário
+                    stdscr.getch()  # Pausa para o usuário ler o inventário
 
                     mapa[bloco.posicao[0]][bloco.posicao[1]] = '.'
-                    blocos.remove(bloco) 
+                    blocos.remove(bloco)
                     break
 
                 elif choice == "2": 
@@ -298,7 +319,8 @@ def entrar_fase(stdscr, player, fase):
         # Verifica se encontrou um inimigo
         for inimigo in inimigos:
             if player.posicao == inimigo.posicao:
-                batalha_ativa = turno_batalha(stdscr, player, inimigo, mapa, music_channel)
+                inventory_items = get_inventory_items(player.id)
+                batalha_ativa = turno_batalha(stdscr, player, inimigo, mapa, inventory_items, music_channel)
                 if not batalha_ativa:
                     break
 
