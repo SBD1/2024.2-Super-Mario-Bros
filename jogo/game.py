@@ -1,4 +1,5 @@
-from character import choose_character, player_turn
+from character import choose_character
+from battle import turno_batalha
 from phase import choose_phase
 from local import initial_local_by_phase, exploration_local, get_encounter_by_local
 from world import choose_world
@@ -38,29 +39,46 @@ def init_game(stdscr):
 
     character = choose_character(stdscr)  # Escolher o personagem
     
-    world = choose_world(stdscr) # Escolher o mundo
-    phase = choose_phase(stdscr, world.id_mundo)  # Escolher a fase
-    local_phase = initial_local_by_phase(phase) # Fazer consulta sql para retornar qual é o local iniciar da fase
+    # Escolher o mundo
+    world = choose_world(stdscr)  # Escolher o mundo
+
+    # Escolher a fase
+    selected_phase = choose_phase(stdscr, world.id_mundo)  # Escolher a fase
+
+    # Agora, use a variável selected_phase
+    if selected_phase:
+        # Passa a fase escolhida para a função que define o local inicial da fase
+        local_phase = initial_local_by_phase(selected_phase)
+    else:
+        # Caso não tenha escolhido uma fase válida, pode adicionar um tratamento de erro
+        stdscr.addstr(0, 0, "Nenhuma fase selecionada!")
+        stdscr.refresh()
+        stdscr.getch()
+        return None
+
+
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Você está na fase: {phase.name}")
+    stdscr.addstr(0, 0, f"Você está na fase: {selected_phase.name}")
     stdscr.refresh()
     stdscr.getch()
 
     while character.vida != 0:
         encounter = get_encounter_by_local(local_phase)
         if encounter:
-            player_turn(stdscr, character, encounter)
+            turno_batalha(stdscr, character, encounter, mapa, items)  # Chama a função de batalha
 
-        local_phase, encounter = exploration_local(stdscr, phase.id_phase, local_phase, character.id)
+        local_phase, encounter = exploration_local(stdscr, selected_phase.id_phase, local_phase, character.id)
         if encounter:
-            player_turn(stdscr, character, encounter)
+            turno_batalha(stdscr, character, encounter, mapa, items)  # Chama a função de batalha
+
         if local_phase.is_final_local:
-            print("ùltimo local da fase")
+            print("Último local da fase")
 
     stdscr.clear()
     stdscr.addstr(0, 0, f"{character} foi derrotado")
     stdscr.refresh()
     stdscr.getch()
+
 
 
 # Inicia o jogo chamando `init_game`

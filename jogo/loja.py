@@ -11,6 +11,7 @@ class Item:
         self.raridade = raridade
         self.quantidade = quantidade
         self.preco = self.definir_preco()
+        self.dano = self.definir_dano()
     
     def definir_preco(self):
         precos_base = {
@@ -20,6 +21,16 @@ class Item:
             "lendário": 100
         }
         return precos_base.get(self.raridade.lower(), 10)
+    
+    def definir_dano(self):
+        dano_base = {
+            "comum": 10,
+            "incomum": 20,
+            "raro": 50,
+            "lendário": 100
+        }
+        return dano_base.get(self.raridade.lower(), 10)
+
 
     def __repr__(self):
         return f"Item(id_item={self.id_item}, tipo={self.tipo}, efeito={self.efeito}, duracao={self.duracao}, raridade={self.raridade}, quantidade={self.quantidade}, preco={self.preco})"

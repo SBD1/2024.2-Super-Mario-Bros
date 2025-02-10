@@ -1,7 +1,15 @@
 import curses
+import pygame
+from battle import exibir_mapa
+from matriz import gera_matriz
 from db import connect_to_db
-from battle import mario_battle_turn
-from loja import get_loja_with_items, comprar_item, vender_item
+from battle import turno_batalha
+from loja import get_loja_with_items, comprar_item, vender_item, Item
+import random
+
+pygame.init()
+
+pygame.mixer.init()
 
 class Character:
     def __init__(self, id_character, name, vida, dano, pontos, id_local, tipo_jogador, moeda):
@@ -13,6 +21,109 @@ class Character:
         self.id_local = id_local
         self.tipo_jogador = tipo_jogador
         self.moeda = moeda
+        self.posicao = [1, 1]
+        self.mapa = None 
+
+    def gerar_posicao_aleatoria(self, mapa):
+        while True:
+            x = random.randint(0, len(mapa) - 1)
+            y = random.randint(0, len(mapa[0]) - 1)
+            if mapa[x][y] != 'M':  # Garantir que a posição não seja ocupada pelo Mario
+                return [x, y]
+
+    def mover(self, direcao, mapa):
+        nova_posicao = self.posicao[:]
+        
+        if direcao == "UP":
+            nova_posicao[0] -= 1
+        elif direcao == "DOWN":
+            nova_posicao[0] += 1
+        elif direcao == "LEFT":
+            nova_posicao[1] -= 1
+        elif direcao == "RIGHT":
+            nova_posicao[1] += 1
+
+        # Verifica se a nova posição está dentro dos limites da matriz
+        if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]):
+            self.posicao = nova_posicao
+            print(f"Mario se moveu para {self.posicao}")
+            
+            # Verifica se Mario passou pela posição do checkpoint
+            if self.posicao == self.checkpoint and not self.salvou_checkpoint:
+                self.salvou_checkpoint = True
+                print("Checkpoint salvo!")
+                curses.napms(1000)  # Espera 2 segundos para dar tempo de ver a mensagem
+        else:
+            print("Movimento inválido!")
+
+    def atacar(self, item, inimigo):
+        dano = item.dano
+        
+        if dano > 0:
+            inimigo.perder_vida(dano)
+            return dano
+        return 0
+
+    def desviar(self, mapa):
+        # Marca a posição atual de Mario com "I" antes de mudar de posição
+        mapa[self.posicao[0]][self.posicao[1]] = 'I'
+        
+        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Representando movimentos de 1 casa
+
+        # Coordenadas atuais de Mario
+        x, y = self.posicao
+
+        # Tentativa de desviar até encontrar uma casa válida
+        while True:
+            # Escolher uma direção aleatória
+            direcao = random.choice(direcoes)
+
+            # Calcular nova posição
+            nova_posicao = [x + direcao[0], y + direcao[1]]
+
+            # Verificar se a nova posição está dentro dos limites do mapa e não é [7,7]
+            if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]) and nova_posicao != [7, 7]:
+                self.posicao = nova_posicao  # Atualizar posição de Mario
+                break  # Sair do loop quando encontrar uma posição válida
+
+    def pular(self, inimigo):
+        print("Mario pula para atacar o inimigo!")
+        
+        # O dano do pulo é menor e causa dano instantâneo no Goomba
+        dano_pulo = 10
+        if inimigo.nome == "Goomba":
+            inimigo.perder_vida(inimigo.vida)  # Goomba morre instantaneamente
+            print(f"Goomba foi derrotado instantaneamente!")
+        else:
+            inimigo.perder_vida(dano_pulo)
+            print(f"{inimigo.nome} sofreu {dano_pulo} de dano pelo pulo!")
+
+class Inimigo:
+    def __init__(self, nome, vida, dano, pontos, id_local, tipo, habilidade, mapa):
+        self.nome = nome
+        self.vida = vida
+        self.dano = dano
+        self.pontos = pontos
+        self.id_local = id_local
+        self.tipo = tipo
+        self.habilidade = habilidade
+        self.posicao = self.gerar_posicao_aleatoria(mapa)  # Posição aleatória para o inimigo
+        self.derrotado = False  # Indica se o inimigo foi derrotado
+
+    def gerar_posicao_aleatoria(self, mapa):
+        while True:
+            x = random.randint(0, len(mapa) - 1)
+            y = random.randint(0, len(mapa[0]) - 1)
+            if mapa[x][y] != 'M' and mapa[x][y] != 'C':  # Garantir que a posição não seja ocupada por Mario ou pelo checkpoint
+                return [x, y]
+
+    def atacar(self):
+        return self.dano
+
+    def perder_vida(self, dano):
+        self.vida -= dano
+        if self.vida <= 0:
+            self.derrotado = True  # Marca como derrotado quando a vida chegar a zero
 
 def get_characters_from_db():
     connection = connect_to_db()
@@ -33,7 +144,6 @@ def get_characters_from_db():
         if not characters:
             return "Nenhum jogador disponível para escolha."
 
-        # Ajustando para incluir os novos atributos
         characters_list = [
             Character(
                 id_character=character[0],
@@ -56,6 +166,43 @@ def get_characters_from_db():
         connection.close()
 
 
+def get_inimigo_from_db(id_personagem, mapa):
+    """Retorna um objeto Inimigo do banco de dados com base no idPersonagem."""
+    connection = connect_to_db()
+    if not connection:
+        return None
+
+    try:
+        with connection.cursor() as cursor:
+            query = """
+            SELECT p.nome, p.vida, p.dano, p.pontos, p.idLocal, i.tipo, i.habilidade
+            FROM Personagem p
+            JOIN Inimigo i ON p.idPersonagem = i.idPersonagem
+            WHERE p.idPersonagem = %s AND p.tipoJogador = 'Inimigo'
+            """
+            cursor.execute(query, (id_personagem,))
+            inimigo_data = cursor.fetchone()
+
+        if not inimigo_data:
+            return None  # Retorna None se o inimigo não for encontrado
+
+        # Criando e retornando um objeto Inimigo
+        return Inimigo(
+            nome=inimigo_data[0],
+            vida=inimigo_data[1],
+            dano=inimigo_data[2],
+            pontos=inimigo_data[3],
+            id_local=inimigo_data[4],
+            tipo=inimigo_data[5],
+            habilidade=inimigo_data[6],
+            mapa=mapa
+        )
+
+    except Exception as e:
+        print(f"Erro ao buscar inimigo: {e}")
+        return None
+    finally:
+        connection.close()
 
 def choose_character(stdscr):
     """Exibe a tela para o jogador escolher o personagem."""
@@ -195,9 +342,8 @@ def get_block_item(id_bloco, player):
     finally:
         connection.close()
 
-
 def get_inventory_items(player_id):
-    """Retorna os itens do inventário de um jogador."""
+    """Retorna os itens do inventário de um jogador no formato da classe Item."""
     connection = connect_to_db()
     if not connection:
         return "Erro ao conectar ao banco de dados."
@@ -205,123 +351,140 @@ def get_inventory_items(player_id):
     try:
         with connection.cursor() as cursor:
             query = """
-            SELECT i.tipo, i.efeito, i.duração, i.raridade, inv.quantidade
+            SELECT i.idItem, i.tipo, i.efeito, i.duração, i.raridade, inv.quantidade
             FROM Inventario inv
             JOIN Item i ON inv.idItem = i.idItem
             WHERE inv.idPersonagem = %s
             """
             cursor.execute(query, (player_id,))
-            items = cursor.fetchall()
+            items_data = cursor.fetchall()
 
-        if not items:
+        if not items_data:
             return "Seu inventário está vazio."
 
-        return items
+        inventory_items = [
+            Item(id_item, tipo, efeito, duracao, raridade, quantidade)
+            for id_item, tipo, efeito, duracao, raridade, quantidade in items_data
+        ]
+
+        return inventory_items
 
     except Exception as e:
         return f"Erro ao buscar itens do inventário: {e}"
     finally:
         connection.close()
 
-def player_turn(stdscr, player, encounter):
-    while True:
-        stdscr.clear()  # Limpa a tela a cada novo turno
-        row = 0
 
-        # Exibe detalhes do encontro
-        if encounter.get('Personagem') is not None:
-            if encounter.get('Personagem').get('tipo') == 'NPC':
-                stdscr.addstr(row, 0, "Você encontrou um NPC")
-                row += 1
-                stdscr.addstr(row, 0, "[1] Conversar")
-                row += 1
-                stdscr.addstr(row, 0, "[2] Ignorar")
-            else:
-                stdscr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
-                stdscr.refresh()
-                stdscr.getch() 
-                mario_battle_turn(stdscr, player)
+# def player_turn(stdscr, player, encounter):
+#     mapa = None  # Inicializa a variável antes de usá-la
 
-        row += 1  # Avança a linha
+#     while True:
+#         stdscr.clear()  # Limpa a tela a cada novo turno
+#         row = 0
 
-        if encounter.get('Loja') is not None:
-            stdscr.addstr(row, 0, "Você encontrou uma loja!")
-            row += 1
-            stdscr.addstr(row, 0, "[1] Comprar")
-            row += 1
-            stdscr.addstr(row, 0, "[2] Vender")
+#         # Exibe detalhes do encontro
+#         if encounter.get('Personagem') is not None:
+#             if encounter.get('Personagem').get('tipo') == 'NPC':
+#                 stdscr.addstr(row, 0, "Você encontrou um NPC")
+#                 row += 1
+#                 stdscr.addstr(row, 0, "[1] Conversar")
+#                 row += 1
+#                 stdscr.addstr(row, 0, "[2] Ignorar")
+#             if encounter.get('Personagem').get('tipo') == 'Inimigo':
+#                 stdscr.addstr(row, 0, "Você encontrou inimigos! Se prepare para o combate.")
+#                 stdscr.refresh()
+#                 stdscr.getch() 
 
-            choice = stdscr.getkey()
+#                 mapa = gera_matriz(linhas=8, colunas=8)
+#                 items = get_inventory_items(player.id)
+#                 inimigo = get_inimigo_from_db(encounter.get('Personagem').get('id'), items)
+#                 turno_batalha(stdscr, player, inimigo, mapa, items)
 
-        if encounter.get('Bloco') is not None:
-            stdscr.addstr(row, 0, "Você encontrou um bloco!")
-            row += 1
-            stdscr.addstr(row, 0, "[1] Bater no bloco")
-            row += 1
-            stdscr.addstr(row, 0, "[2] Ignorar bloco")
-            stdscr.refresh()
+#         row += 1  # Avança a linha
 
-            choice = stdscr.getkey()
+#         if encounter.get('Loja') is not None:
+#             stdscr.addstr(row, 0, "Você encontrou uma loja!")
+#             row += 1
+#             stdscr.addstr(row, 0, "[1] Comprar")
+#             row += 1
+#             stdscr.addstr(row, 0, "[2] Vender")
 
-        if encounter.get('CheckPoint!') is not None:
-            stdscr.addstr(row, 0, "Você encontrou um CheckPoint!")
-            row += 1
-            stdscr.addstr(row, 0, "CheckPoint Ativado!")
-            active_checkpoint(player)
+#             choice = stdscr.getkey()
 
-        if choice == "1" and encounter.get('Bloco') is not None:  # Jogador escolheu bater no bloco
-            stdscr.clear()  # Limpa a tela para a próxima mensagem
-            stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
-            stdscr.refresh()
-            stdscr.getch()  # Pausa para dar efeito
+#         if encounter.get('Bloco') is not None:
+#             stdscr.addstr(row, 0, "Você encontrou um bloco!")
+#             row += 1
+#             stdscr.addstr(row, 0, "[1] Bater no bloco")
+#             row += 1
+#             stdscr.addstr(row, 0, "[2] Ignorar bloco")
+#             stdscr.refresh()
 
-            item_description = get_block_item(encounter.get('Bloco'), player)  # Obtém o item do bloco e adiciona ao inventário
+#             choice = stdscr.getkey()
+
+#         if encounter.get('CheckPoint!') is not None:
+#             stdscr.addstr(row, 0, "Você encontrou um CheckPoint!")
+#             row += 1
+#             stdscr.addstr(row, 0, "CheckPoint Ativado!")
+#             active_checkpoint(player)
+
+#         if choice == "1" and encounter.get('Bloco') is not None:  # Jogador escolheu bater no bloco
+#             stdscr.clear()  # Limpa a tela para a próxima mensagem
+#             stdscr.addstr(row + 1, 0, "Você bateu no bloco!")
+#             stdscr.refresh()
+#             stdscr.getch()  # Pausa para dar efeito
+
+#             item_description = get_block_item(encounter.get('Bloco'), player)  # Obtém o item do bloco e adiciona ao inventário
             
-            if item_description:
-                stdscr.clear()  # Limpa a tela antes de mostrar a próxima mensagem
-                stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
-                row += 1
-            else:
-                stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
+#             if item_description:
+#                 stdscr.clear()  # Limpa a tela antes de mostrar a próxima mensagem
+#                 stdscr.addstr(row + 3, 0, f"Você encontrou: {item_description}!")
+#                 row += 1
+#             else:
+#                 stdscr.addstr(row + 3, 0, "O bloco estava vazio.")
 
-            # Exibindo os itens no inventário após o item do bloco ser encontrado
-            stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
-            inventory_items = get_inventory_items(player.id)
-            if isinstance(inventory_items, list):
-                for i, item in enumerate(inventory_items):
-                    stdscr.addstr(row + 5 + i, 0, f"{item[0]} (Efeito: {item[1]}) - {item[4]} unidades")
-            else:
-                stdscr.addstr(row + 5, 0, inventory_items)
+#             # Exibindo os itens no inventário após o item do bloco ser encontrado
+#             stdscr.addstr(row + 4, 0, "Itens no seu inventário:")
+#             inventory_items = get_inventory_items(player.id)
+#             if isinstance(inventory_items, list):
+#                 for i, item in enumerate(inventory_items):
+#                     stdscr.addstr(row + 5 + i, 0, f"{item.tipo} (Efeito: {item.efeito}) - {item.quantidade} unidades")
+#             else:
+#                 stdscr.addstr(row + 5, 0, inventory_items)
 
-            stdscr.refresh()
-            stdscr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
+#             stdscr.refresh()
+#             stdscr.getch()  # Espera o jogador pressionar uma tecla antes de continuar
 
-            stdscr.clear()  # Limpa a tela antes de mostrar a batalha
-            stdscr.addstr(row + 6, 0, "Prepare-se para a batalha!")
-            stdscr.refresh()
-            stdscr.getch()  # Pausa para dar um pouco de tempo
+#             stdscr.clear()  # Limpa a tela antes de mostrar a batalha
+#             stdscr.addstr(row + 6, 0, "Prepare-se para a batalha!")
+#             stdscr.refresh()
+#             stdscr.getch()  # Pausa para dar um pouco de tempo
 
-            # Chama a função de batalha
-            battle.mario_battle_turn(stdscr, player)
-        elif choice == "2" and encounter.get('Bloco') is not None:  # Jogador escolheu ignorar o bloco
-            stdscr.clear()  # Limpa a tela antes de mostrar a mensagem de ignorar
-            stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
-            stdscr.refresh()
-            stdscr.getch()
-            return
+#             mapa = exibir_mapa(stdscr, player, mapa)
+#             # Pegando o mapa
+#             music_channel = pygame.mixer.Channel(0)
+
+#             # Chama a função de batalha
+#             turno_batalha(stdscr, player, inimigo, mapa, music_channel)
+
+#         elif choice == "2" and encounter.get('Bloco') is not None:  # Jogador escolheu ignorar o bloco
+#             stdscr.clear()  # Limpa a tela antes de mostrar a mensagem de ignorar
+#             stdscr.addstr(row + 1, 0, "Você ignorou o bloco.")
+#             stdscr.refresh()
+#             stdscr.getch()
+#             return
         
-        if choice == "1" and encounter.get('Loja') is not None:
-            loja = get_loja_with_items(encounter.get('Loja'))
-            comprar_item(stdscr, player, loja)
-        elif choice == "2" and encounter.get('Loja') is not None:
-            loja = get_loja_with_items(encounter.get('Loja'))
-            vender_item(stdscr, player.id, loja)
+#         if choice == "1" and encounter.get('Loja') is not None:
+#             loja = get_loja_with_items(encounter.get('Loja'))
+#             comprar_item(stdscr, player, loja)
+#         elif choice == "2" and encounter.get('Loja') is not None:
+#             loja = get_loja_with_items(encounter.get('Loja'))
+#             vender_item(stdscr, player.id, loja)
 
         
-        # Ação de checkpoint e outras interações seguem aqui...
+#         # Ação de checkpoint e outras interações seguem aqui...
 
-        stdscr.refresh()
-        stdscr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop        
+#         stdscr.refresh()
+#         stdscr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop        
 
 def insert_item_into_inventory(player_id, item_id, quantity):
         connection = connect_to_db()
@@ -372,7 +535,7 @@ def insert_item_into_inventory(player_id, item_id, quantity):
         stdcsr.refresh()
         stdcsr.getch()  # Esperar jogador pressionar tecla antes de limpar e repetir loop
 
-def active_checkpoint(player):
-    player.last_checkpoint = player.position.copy()  # Salva a posição do jogador no último checkpoint
-    player.health = player.max_health  # Restaura o hp completo do jogador
+# def active_checkpoint(player):
+#     player.last_checkpoint = player.position.copy()  # Salva a posição do jogador no último checkpoint
+#     player.health = player.max_health  # Restaura o hp completo do jogador
     

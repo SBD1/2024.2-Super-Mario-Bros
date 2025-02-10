@@ -1,23 +1,15 @@
 import curses
-import random
 import pyfiglet  # Importando o pyfiglet
 import pygame
 import os
+from phase import get_inimigo_by_fase
+from phase import get_blocos_by_fase
+import random
 
-#Definindo fase final
-TOTAL_MUNDOS = 3
-FASES_POR_MUNDO = 3
-
-# Definindo o personagem Mario
-class Mario:
-    def __init__(self, mapa):
-        self.vida = 100
-        self.pontos = 0
-        self.posicao = [1, 1]  # Posição inicial do Mario na matriz (1, 1)
-        self.checkpoint = self.gerar_posicao_aleatoria(mapa)  # Gerar o checkpoint aleatório
-        self.salvou_checkpoint = False  # Indica se Mario já salvou o checkpoint
-        self.fase = 1
-        self.mundo = 1
+class Bloco:
+    def __init__(self, tipo, mapa):
+        self.tipo = tipo  # Tipo pode ser 'Moeda', 'Flor de Fogo', 'Boomerang', ou 'Vida'
+        self.posicao = self.gerar_posicao_aleatoria(mapa)
 
     def gerar_posicao_aleatoria(self, mapa):
         while True:
@@ -25,90 +17,30 @@ class Mario:
             y = random.randint(0, len(mapa[0]) - 1)
             if mapa[x][y] != 'M':  # Garantir que a posição não seja ocupada pelo Mario
                 return [x, y]
+    
+    def interagir(self, mario):
+        if self.tipo == "Moeda":
+            mario.pontos += 10
+            print("Você encontrou uma moeda! +10 pontos.")
+        elif self.tipo == "Flor de Fogo":
+            print("Você encontrou uma Flor de Fogo!")
+            # Aqui você pode adicionar lógica para adicionar a Flor de Fogo ao inventário de Mario ou permitir que ele a use
+        elif self.tipo == "Boomerang":
+            print("Você encontrou um Boomerang!")
+            # Aqui você pode adicionar lógica para permitir que Mario use o Boomerang
+        elif self.tipo == "Vida":
+            mario.vida += 20
+            print("Você encontrou uma Vida! +20 de vida.")
 
-    def avancar_fase(self):
-        if self.fase < FASES_POR_MUNDO:
-            self.fase += 1
-        else:
-            print(f"Mundo {self.mundo} - Fase {self.fase}: Esta era a fase final do mundo!")
-            self.fase = 1
-            self.mundo += 1
-
-    def mover(self, direcao, mapa):
-        nova_posicao = self.posicao[:]
-        
-        if direcao == "UP":
-            nova_posicao[0] -= 1
-        elif direcao == "DOWN":
-            nova_posicao[0] += 1
-        elif direcao == "LEFT":
-            nova_posicao[1] -= 1
-        elif direcao == "RIGHT":
-            nova_posicao[1] += 1
-
-        # Verifica se a nova posição está dentro dos limites da matriz
-        if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]):
-            self.posicao = nova_posicao
-            print(f"Mario se moveu para {self.posicao}")
-            
-            # Verifica se Mario passou pela posição do checkpoint
-            if self.posicao == self.checkpoint and not self.salvou_checkpoint:
-                self.salvou_checkpoint = True
-                print("Checkpoint salvo!")
-                curses.napms(1000)  # Espera 2 segundos para dar tempo de ver a mensagem
-        else:
-            print("Movimento inválido!")
-
-    def atacar(self, item, inimigo):
-        dano = 0
-        if item == 'Fireball':
-            dano = 30
-        elif item == 'Boomerang':
-            dano = 20
-        
-        if dano > 0:
-            inimigo.perder_vida(dano)
-            return dano
-        return 0
-
-    def desviar(self, mapa):
-        # Marca a posição atual de Mario com "I" antes de mudar de posição
-        mapa[self.posicao[0]][self.posicao[1]] = 'I'
-        
-        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Representando movimentos de 1 casa
-
-        # Coordenadas atuais de Mario
-        x, y = self.posicao
-
-        # Tentativa de desviar até encontrar uma casa válida
-        while True:
-            # Escolher uma direção aleatória
-            direcao = random.choice(direcoes)
-
-            # Calcular nova posição
-            nova_posicao = [x + direcao[0], y + direcao[1]]
-
-            # Verificar se a nova posição está dentro dos limites do mapa e não é [7,7]
-            if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]) and nova_posicao != [7, 7]:
-                self.posicao = nova_posicao  # Atualizar posição de Mario
-                break  # Sair do loop quando encontrar uma posição válida
-
-    def pular(self, inimigo):
-        print("Mario pula para atacar o inimigo!")
-        
-        # O dano do pulo é menor e causa dano instantâneo no Goomba
-        dano_pulo = 10
-        if inimigo.nome == "Goomba":
-            inimigo.perder_vida(inimigo.vida)  # Goomba morre instantaneamente
-            print(f"Goomba foi derrotado instantaneamente!")
-        else:
-            inimigo.perder_vida(dano_pulo)
-            print(f"{inimigo.nome} sofreu {dano_pulo} de dano pelo pulo!")
-
-# Função para exibir o mapa
-def exibir_mapa(stdscr, mario, mapa):
+def exibir_mapa(stdscr, player, mapa):
     stdscr.clear()  # Limpa a tela antes de desenhar o mapa
     
+    # Verificar se o mapa é None antes de continuar
+    if mapa is None:
+        stdscr.addstr(0, 0, "Erro: Mapa não carregado corretamente.")
+        stdscr.refresh()
+        return
+
     # Obtendo as dimensões da janela do terminal
     altura, largura = stdscr.getmaxyx()
 
@@ -129,7 +61,7 @@ def exibir_mapa(stdscr, mario, mapa):
     # Exibindo a matriz do mapa
     for i in range(len(mapa)):
         for j in range(len(mapa[i])):
-            if [i, j] == mario.posicao:
+            if [i, j] == player.posicao:
                 stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "M")  # Exibe 'M' para Mario
             elif mapa[i][j] == 'X':  # Exibe 'X' para indicar a posição da batalha (após a derrota do inimigo)
                 stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "X")
@@ -144,54 +76,32 @@ def exibir_mapa(stdscr, mario, mapa):
     
     stdscr.refresh()
 
-# Função para rodar um turno de batalha
-class Inimigo:
-    def __init__(self, nome, vida, dano, pontos, mapa):
-        self.nome = nome
-        self.vida = vida
-        self.dano = dano
-        self.pontos = pontos
-        self.posicao = self.gerar_posicao_aleatoria(mapa)  # Posição aleatória para o inimigo
-        self.derrotado = False  # Indica se o inimigo foi derrotado
-
-    def gerar_posicao_aleatoria(self, mapa):
-        while True:
-            x = random.randint(0, len(mapa) - 1)
-            y = random.randint(0, len(mapa[0]) - 1)
-            if mapa[x][y] != 'M' and mapa[x][y] != 'C':  # Garantir que a posição não seja ocupada por Mario ou pelo checkpoint
-                return [x, y]
-
-    def atacar(self):
-        return self.dano
-
-    def perder_vida(self, dano):
-        self.vida -= dano
-        if self.vida <= 0:
-            self.derrotado = True  # Marca como derrotado quando a vida chegar a zero
 
 # Função para rodar um turno de batalha
-def turno_batalha(stdscr, mario, inimigo, mapa, music_channel):
+def turno_batalha(stdscr, player, inimigo, mapa, items):
     # Verifica se o inimigo foi derrotado antes de iniciar a batalha
     if inimigo.derrotado:
         return True  # Retorna imediatamente, não continua a batalha
 
     stdscr.clear()
-    stdscr.addstr(0, 0, f"Início do turno de Mario! Vida de Mario: {mario.vida}, Pontos: {mario.pontos}")
+    stdscr.addstr(0, 0, f"Início do turno de {player.nome}! Vida de {player.nome}: {player.vida}, Pontos: {player.pontos}")
     stdscr.addstr(1, 0, f"Inimigo: {inimigo.nome}, Vida: {inimigo.vida}")
-    stdscr.addstr(3, 0, "Escolha sua ação: [F] Usar Flor de Fogo, [B] Usar Boomerang, [Q] Pular, [E] Desviar")
+    stdscr.addstr(3, 0, "Escolha sua Ação: [Q] Pular, [E] Desviar")
+    stdscr.addstr(3, 0, "Escolha seu item ou Ação: ")
     stdscr.refresh()
+
+    for i, item in enumerate(items):
+        stdscr.addstr(i + 1, 0, f"[{i + 1}] {item.tipo} - Efeito: {item.efeito}")
+        stdscr.addstr(len(items) + 2, 0, "Pressione o número correspondente para escolher.")
 
     while True:
         key = stdscr.getch()
 
-        if key == ord('f') or key == ord('F'):  # Usar a Flor de Fogo
-            item = 'Fireball'
-            dano = mario.atacar(item, inimigo)
-            stdscr.addstr(5, 0, f"\nMario ataca com Flor de Fogo! Causa {dano} de dano no {inimigo.nome}.")
-        elif key == ord('b') or key == ord('B'):  # Usar o Boomerang
-            item = 'Boomerang'
-            dano = mario.atacar(item, inimigo)
-            stdscr.addstr(5, 0, f"\nMario ataca com Boomerang! Causa {dano} de dano no {inimigo.nome}.")
+        if ord('1') <= key < ord('1') + len(items):
+            chosen_index = key - ord('1')
+            item = items[chosen_index]
+            dano = player.atacar(item, inimigo)
+            stdscr.addstr(5, 0, f"{inimigo.nome} sofreu {dano} de dano pelo {item.tipo}!")
         elif key == ord('q') or key == ord('Q'):  # Pular
             dano_pulo = 10
             if inimigo.nome == "Goomba":
@@ -199,30 +109,30 @@ def turno_batalha(stdscr, mario, inimigo, mapa, music_channel):
                 stdscr.addstr(5, 0, f"Goomba foi derrotado instantaneamente!")
                 stdscr.refresh()
                 curses.napms(2000)
-                mario.pontos += inimigo.pontos  # Adiciona os pontos do Goomba
+                player.pontos += inimigo.pontos  # Adiciona os pontos do Goomba
             elif inimigo.nome == "Koopa Troopa":
                 inimigo.perder_vida(dano_pulo)  # Koopa Troopa leva o dano de 10
                 stdscr.addstr(5, 0, f"{inimigo.nome} sofreu {dano_pulo} de dano pelo pulo!")
                 if inimigo.vida <= 0:
-                    mario.pontos += inimigo.pontos  # Adiciona os pontos do Koopa Troopa
+                    player.pontos += inimigo.pontos  # Adiciona os pontos do Koopa Troopa
             break
 
         elif key == ord('e') or key == ord('E'):  # Desviar
-            mario.desviar(mapa)
+            player.desviar(mapa)
             break
 
         # Mostrar a vida atual do inimigo e Mario após o ataque
         stdscr.clear()
-        stdscr.addstr(0, 0, f"Início do turno de Mario! Vida de Mario: {mario.vida}, Pontos: {mario.pontos}")
+        stdscr.addstr(0, 0, f"Início do turno de Mario! Vida de Mario: {player.vida}, Pontos: {player.pontos}")
         stdscr.addstr(1, 0, f"Inimigo: {inimigo.nome}, Vida: {inimigo.vida}")
         stdscr.addstr(3, 0, "Escolha sua ação: [F] Usar Flor de Fogo, [B] Usar Boomerang, [Q] Pular, [E] Desviar")
         stdscr.addstr(6, 0, f"Vida atual de {inimigo.nome}: {inimigo.vida}")
-        stdscr.addstr(7, 0, f"Vida de Mario: {mario.vida}")
+        stdscr.addstr(7, 0, f"Vida de Mario: {player.vida}")
         stdscr.refresh()
 
         # Verificando se o inimigo foi derrotado
         if inimigo.vida <= 0:
-            mario.pontos += inimigo.pontos
+            player.pontos += inimigo.pontos
             stdscr.addstr(8, 0, f"{inimigo.nome} foi derrotado! Mario ganha {inimigo.pontos} pontos.")
             stdscr.refresh()
             curses.napms(2000)  # Espera 2 segundos para dar tempo de ver a mensagem
@@ -232,8 +142,8 @@ def turno_batalha(stdscr, mario, inimigo, mapa, music_channel):
 
         
         # Se Mario perdeu toda a vida
-        if mario.vida <= 0:
-            stdscr.addstr(10, 0, "Mario perdeu toda a sua vida. Game Over!")
+        if player.vida <= 0:
+            stdscr.addstr(10, 0, f"{player.name} perdeu toda a sua vida. Game Over!")
             stdscr.refresh()
             curses.napms(2000)  # Espera 2 segundos para dar tempo de ver a mensagem
 
@@ -254,25 +164,25 @@ def turno_batalha(stdscr, mario, inimigo, mapa, music_channel):
                 key = stdscr.getch()
 
                 if key == ord('s') or key == ord('S'):
-                    if mario.salvou_checkpoint:
-                        mario.posicao = mario.checkpoint[:]  # Voltar para o checkpoint em [3, 2]
-                        mario.vida = 100  # Restaurar a vida
-                        mario.pontos = 0  # Resetar os pontos
+                    if player.salvou_checkpoint:
+                        player.posicao = player.checkpoint[:]  # Voltar para o checkpoint em [3, 2]
+                        player.vida = 100  # Restaurar a vida
+                        player.pontos = 0  # Resetar os pontos
                         # Alterar a posição do inimigo para 'I' (indicando que o inimigo será reposicionado)
                         mapa[inimigo.posicao[0]][inimigo.posicao[1]] = 'I'
                         pygame.mixer.music.stop()
 
                         # Retomar a música de fundo
-                        music_path = os.path.join(os.path.dirname(__file__), "mario_music.mp3")
+                        music_path = os.path.join(os.path.dirname(__file__), "mairo_music.mp3")
                         music_channel.play(pygame.mixer.Sound(music_path), loops=-1)
                         return True  # Continuar o jogo
                     else:
                         stdscr.addstr(1, 0, "Você precisa passar pelo Checkpoint para salvar o jogo!")
                         stdscr.refresh()
                         curses.napms(3000) 
-                        mario.vida = 100  # Restaurar a vida
-                        mario.pontos = 0
-                        mario.posicao = [0,0]
+                        player.vida = 100  # Restaurar a vida
+                        player.pontos = 0
+                        player.posicao = [0,0]
                         pygame.mixer.music.stop()
 
                         # Retomar a música de fundo
@@ -295,15 +205,15 @@ def turno_batalha(stdscr, mario, inimigo, mapa, music_channel):
         # Se o inimigo não foi derrotado, ele ataca Mario
         if not inimigo.derrotado:
             dano_inimigo = inimigo.atacar()
-            mario.vida -= dano_inimigo
-            stdscr.addstr(9, 0, f"{inimigo.nome} ataca Mario e causa {dano_inimigo} de dano!")
+            player.vida -= dano_inimigo
+            stdscr.addstr(9, 0, f"{inimigo.nome} ataca {player.anem} e causa {dano_inimigo} de dano!")
      
 
     return True
 
 
 # Função para iniciar o jogo
-def jogo(stdscr):
+def jogo(stdscr, player, fase):
     curses.curs_set(0)  # Desabilitar o cursor
     stdscr.nodelay(1)  # Não bloquear na espera de uma tecla
     stdscr.timeout(100)  # Timeout para obter uma tecla
@@ -311,27 +221,19 @@ def jogo(stdscr):
     fim_fase = [7, 7]  # Definição do final da fase
 
     # Criando o mapa (matriz) 8x8
-    mapa = [[0 for _ in range(8)] for _ in range(8)]
+    # Gerar mapa 
 
-    mario = Mario(mapa)
-    inimigos = [
-        Inimigo("Goomba", 50, 10, 50, mapa),
-        Inimigo("Koopa Troopa", 60, 12, 75, mapa)
-    ]
+    mapa = [[0 for _ in range(8)] for _ in range(8)]  # Criação do mapa 8x8
+    player.mapa = mapa  # Definindo o mapa do jogador
+    inimigos = get_inimigos_by_fase(fase.id, mapa)  # Passando o mapa para a função que retorna os inimigos
+    blocos = get_blocos_by_fase(fase.id, mapa)  # Passando o mapa para a função que retorna os blocos
 
-    # Adicionando o cogumelo ao mapa
-    cogumelo_posicao = mario.gerar_posicao_aleatoria(mapa)
-    mapa[cogumelo_posicao[0]][cogumelo_posicao[1]] = 'C'  # 'C' representa o cogumelo
-    cogumelo_coletado = False
-
-    # Inicializa o mixer com canais separados
     pygame.mixer.init()
-    pygame.mixer.set_num_channels(2)  # Canal 0 para música de fundo, Canal 1 para efeitos sonoros
+    pygame.mixer.set_num_channels(2) 
 
-    # Toca a música de fundo no canal 0
     music_channel = pygame.mixer.Channel(0)
     music_path = os.path.join(os.path.dirname(__file__), "mario_music.mp3")
-    music_channel.play(pygame.mixer.Sound(music_path), loops=-1)  # Repete indefinidamente
+    music_channel.play(pygame.mixer.Sound(music_path), loops=-1)  
 
     # Fase inicial: escolha da direção
     stdscr.clear()
@@ -342,21 +244,21 @@ def jogo(stdscr):
     while True:
         key = stdscr.getch()
         if key == curses.KEY_RIGHT:  # Ir para a direita
-            mario.posicao = [0, 0]
+            player.posicao = [0, 0]
             break
         elif key == curses.KEY_LEFT:  # Ir para a esquerda
-            mario.posicao = [7, 0]
+            player.posicao = [7, 0]
             break
 
     # Jogo continua após escolha da direção
-    while mario.vida > 0:
-        exibir_mapa(stdscr, mario, mapa)  # Exibe o mapa com Mario
+    while player.vida > 0:
+        exibir_mapa(stdscr, player, mapa)  # Exibe o mapa com Mario
 
         # Verificando se Mario chegou ao final da fase
-        if mario.posicao == fim_fase:
-            mario.pontos += 100
+        if player.posicao == fim_fase:
+            player.pontos += 100
             stdscr.clear()
-            stdscr.addstr(0, 0, f"Parabéns! Mario completou a fase com {mario.pontos} pontos!")
+            stdscr.addstr(0, 0, f"Parabéns! Mario completou a fase com {player.pontos} pontos!")
             stdscr.refresh()
             curses.napms(2000)  # Espera 2 segundos para o jogador ver a mensagem
 
@@ -374,9 +276,9 @@ def jogo(stdscr):
             break  # Fim do jogo
 
         # Verificando se Mario encontrou o cogumelo
-        if mario.posicao == cogumelo_posicao and not cogumelo_coletado:
-            mario.vida += 50
-            stdscr.addstr(10, 0, f"Mario encontrou um cogumelo! Vida aumentada para {mario.vida}!")
+        if player.posicao == cogumelo_posicao and not cogumelo_coletado:
+            player.vida += 50
+            stdscr.addstr(10, 0, f"Mario encontrou um cogumelo! Vida aumentada para {player.vida}!")
             stdscr.refresh()
 
             # Toca o som de vida no canal 1
@@ -392,18 +294,18 @@ def jogo(stdscr):
         key = stdscr.getch()
 
         if key == curses.KEY_UP:  # Mover para cima
-            mario.mover("UP", mapa)
+            player.mover("UP", mapa)
         elif key == curses.KEY_DOWN:  # Mover para baixo
-            mario.mover("DOWN", mapa)
+            player.mover("DOWN", mapa)
         elif key == curses.KEY_LEFT:  # Mover para esquerda
-            mario.mover("LEFT", mapa)
+            player.mover("LEFT", mapa)
         elif key == curses.KEY_RIGHT:  # Mover para direita
-            mario.mover("RIGHT", mapa)
+            player.mover("RIGHT", mapa)
 
         # Se Mario encontrar inimigo, batalha
         for inimigo in inimigos:
-            if mario.posicao == inimigo.posicao:
-                batalha_ativa = turno_batalha(stdscr, mario, inimigo, mapa, music_channel)
+            if player.posicao == inimigo.posicao:
+                batalha_ativa = turno_batalha(stdscr, player, inimigo, mapa, music_channel)
                 if not batalha_ativa:
                     break  # Sai do jogo se o jogador escolher não continuar
 
