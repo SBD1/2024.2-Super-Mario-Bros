@@ -1,11 +1,10 @@
 ## Introdução
 
-O DDL (Data Definition Language) é uma parte essencial do SQL (Structured Query Language), responsável pela definição da estrutura de um banco de dados.  
+O DDL (Data Definition Language) é uma parte essencial do SQL (Structured Query Language), responsável pela definição da estrutura de um banco de dados.
 
-Com a DDL, é possível criar, alterar e excluir objetos no banco de dados, como tabelas, índices, esquemas, visões e outros elementos relacionados à organização dos dados.  
+Com a DDL, é possível criar, alterar e excluir objetos no banco de dados, como tabelas, índices, esquemas, visões e outros elementos relacionados à organização dos dados.
 
 Por meio dela, desenvolvedores e administradores podem configurar a estrutura base que será utilizada para armazenar e gerenciar informações, garantindo uma organização eficiente e flexível para os sistemas que utilizam bancos de dados relacionais.
-
 
 ## Descrição das Tabelas e Entidades
 
@@ -17,10 +16,7 @@ A tabela **Yoshi** armazena informações sobre a entidade Yoshi no sistema.
 CREATE TABLE Yoshi (
     idYoshi SERIAL NOT NULL,
     nome VARCHAR(20) NOT NULL,
-    idBloco INTEGER NOT NULL,
-
-    CONSTRAINT yoshi_pk PRIMARY KEY (idYoshi),
-    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco)
+    CONSTRAINT yoshi_pk PRIMARY KEY (idYoshi)
 );
 ```
 
@@ -28,7 +24,6 @@ CREATE TABLE Yoshi (
 
 - `idYoshi`: Identificador único de Yoshi (chave primária).
 - `nome`: Nome de Yoshi.
-- `idBloco`: Referência ao bloco associado.
 
 ### Bloco
 
@@ -38,10 +33,15 @@ A tabela **Bloco** armazena detalhes sobre os blocos existentes no jogo.
 CREATE TABLE Bloco (
     idBloco SERIAL NOT NULL,
     tipo VARCHAR(30) NOT NULL,
-    idLocal INTEGER NOT NULL,
-
+    idItem INTEGER,
+    idYoshi INTEGER,
+    idMoeda INTEGER,
+    idFase INTEGER, -- Removendo o NOT NULL
     CONSTRAINT bloco_pk PRIMARY KEY (idBloco),
-    FOREIGN KEY (idLocal) REFERENCES Local(idLocal)
+    FOREIGN KEY (idItem) REFERENCES Item(idItem) ON DELETE SET NULL,
+    FOREIGN KEY (idYoshi) REFERENCES Yoshi(idYoshi) ON DELETE SET NULL,
+    FOREIGN KEY (idMoeda) REFERENCES Moeda(idMoeda) ON DELETE SET NULL,
+    FOREIGN KEY (idFase) REFERENCES Fase(idFase)
 );
 ```
 
@@ -49,25 +49,10 @@ CREATE TABLE Bloco (
 
 - `idBloco`: Identificador único do bloco (chave primária).
 - `tipo`: Tipo do bloco.
-- `idLocal`: Referência ao local relacionado ao bloco.
-
-### Cano
-
-A tabela **Cano** representa conexões entre diferentes áreas.
-
-```sql
-CREATE TABLE Cano (
-    idCano SERIAL NOT NULL,
-    idDestino VARCHAR(35) NOT NULL,
-
-    CONSTRAINT cano_pk PRIMARY KEY (idCano)
-);
-```
-
-**Colunas:**
-
-- `idCano`: Identificador único do cano (chave primária).
-- `idDestino`: Referência ao destino conectado pelo cano.
+- `idItem`: Referência ao item relacionado ao bloco.
+- `idYoshi`: Referência ao yoshi relacionado ao bloco.
+- `idMoeda`: Referência ao moeda relacionado ao bloco.
+- `idFase`: Referência ao fase relacionado ao bloco.
 
 ### Mundo
 
@@ -77,12 +62,11 @@ A tabela **Mundo** armazena informações sobre os mundos disponíveis no jogo.
 CREATE TABLE Mundo (
     idMundo SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
+    idLoja INTEGER NOT NULL,
     descrição TEXT,
     nivel INTEGER NOT NULL,
-    idCano INTEGER NOT NULL,
-
     CONSTRAINT mundo_pk PRIMARY KEY (idMundo),
-    FOREIGN KEY (idCano) REFERENCES Cano(idCano)
+    CONSTRAINT loja_item_loja_fk FOREIGN KEY (idLoja) REFERENCES Loja(idLoja) ON DELETE CASCADE
 );
 
 ```
@@ -93,7 +77,7 @@ CREATE TABLE Mundo (
 - `nome`: Nome do mundo.
 - `descrição`: Detalhes descritivos sobre o mundo.
 - `nivel`: Nível associado ao mundo.
-- `idCano`: Referência ao cano associado.
+- `idLoja`: Referência a loja associado.
 
 ### Fase
 
@@ -105,7 +89,6 @@ CREATE TABLE Fase (
     nome VARCHAR(15) NOT NULL,
     nivel INTEGER NOT NULL,
     idMundo INTEGER NOT NULL,
-
     CONSTRAINT fase_pk PRIMARY KEY (idFase),
     FOREIGN KEY (idMundo) REFERENCES Mundo(idMundo)
 );
@@ -123,12 +106,14 @@ CREATE TABLE Fase (
 A tabela **Inventário** armazena informações sobre os itens em posse do jogador.
 
 ```sql
-CREATE TABLE Inventário (
-    idIventário SERIAL NOT NULL,
+CREATE TABLE Inventario (
+    idInventario SERIAL NOT NULL,
     quantidade INTEGER NOT NULL,
-    IdItem INTEGER NOT NULL,
-
-    CONSTRAINT inventário_pk PRIMARY KEY (idIventário)
+    idItem INTEGER NOT NULL,
+    idPersonagem INTEGER NOT NULL,
+    CONSTRAINT inventario_pk PRIMARY KEY (idInventario),
+    FOREIGN KEY (idItem) REFERENCES Item(idItem),
+    FOREIGN KEY (idPersonagem) REFERENCES personagem(idpersonagem)
 );
 ```
 
@@ -137,6 +122,7 @@ CREATE TABLE Inventário (
 - `idIventário`: Identificador único do inventário (chave primária).
 - `quantidade`: Quantidade de itens.
 - `IdItem`: Referência ao item.
+- `idPersonagem`: Referência ao personagem.
 
 ### Inimigo
 
@@ -145,9 +131,11 @@ A tabela **Inimigo** registra detalhes sobre os inimigos no jogo.
 ```sql
 CREATE TABLE Inimigo (
     idInimigo SERIAL NOT NULL,
+    idPersonagem INTEGER NOT NULL,
     tipo VARCHAR(15) NOT NULL,
-
-    CONSTRAINT inimigo_pk PRIMARY KEY (idInimigo)
+    habilidade VARCHAR(15) NOT NULL,
+    CONSTRAINT inimigo_pk PRIMARY KEY (idInimigo),
+    FOREIGN KEY (idPersonagem) REFERENCES Personagem(idPersonagem)
 );
 ```
 
@@ -155,6 +143,7 @@ CREATE TABLE Inimigo (
 
 - `idInimigo`: Identificador único do inimigo (chave primária).
 - `tipo`: Tipo do inimigo.
+- `habilidade`: Habilidade do inimigo
 
 ### Moeda
 
@@ -164,10 +153,7 @@ A tabela **Moeda** armazena informações sobre as moedas coletáveis.
 CREATE TABLE Moeda (
     idMoeda SERIAL NOT NULL,
     valor INTEGER NOT NULL,
-    idBloco INTEGER NOT NULL,
-
-    CONSTRAINT moeda_pk PRIMARY KEY (idMoeda),
-    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco)
+    CONSTRAINT moeda_pk PRIMARY KEY (idMoeda)
 );
 ```
 
@@ -175,8 +161,6 @@ CREATE TABLE Moeda (
 
 - `idMoeda`: Identificador único da moeda (chave primária).
 - `valor`: Valor da moeda.
-- `idBloco`: Referência ao bloco onde a moeda está armazenada.
-
 
 ### Loja
 
@@ -186,9 +170,7 @@ A tabela **Loja** armazena informações sobre as lojas presentes no jogo.
 CREATE TABLE Loja (
     idLoja SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
-    idLocal INTEGER NOT NULL,
-
-    CONSTRAINT loja_pk PRIMARY KEY (idLoja),
+    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
 );
 ```
 
@@ -196,7 +178,6 @@ CREATE TABLE Loja (
 
 - `idLoja`: Identificador único da loja (chave primária).
 - `nome`: Nome da loja.
-- `idLocal`: Referência ao local associado à loja.
 
 ### Item
 
@@ -209,10 +190,7 @@ CREATE TABLE Item (
     efeito VARCHAR(50),
     duração INTEGER,
     raridade VARCHAR(20),
-    idBloco INTEGER NOT NULL,
-
-    CONSTRAINT item_pk PRIMARY KEY (idItem),
-    FOREIGN KEY (idBloco) REFERENCES Bloco(idBloco)
+    CONSTRAINT item_pk PRIMARY KEY (idItem)
 );
 ```
 
@@ -223,7 +201,6 @@ CREATE TABLE Item (
 - `efeito`: Efeito do item.
 - `duração`: Duração do efeito do item.
 - `raridade`: Raridade do item.
-- `idBloco`: Referência ao bloco relacionado.
 
 ### Personagem
 
@@ -236,10 +213,10 @@ CREATE TABLE Personagem (
     vida INTEGER NOT NULL,
     dano INTEGER NOT NULL,
     pontos INTEGER NOT NULL,
-    idLocal INTEGER NOT NULL,
-
+    idFase INTEGER, -- Removendo o NOT NULL
+    tipoJogador VARCHAR(15), -- "Jogador", "Inimigo", "NPC"
     CONSTRAINT personagem_pk PRIMARY KEY (idPersonagem),
-    FOREIGN KEY (idLocal) REFERENCES Local(idLocal)
+    FOREIGN KEY (idFase) REFERENCES Fase(idFase)
 );
 ```
 
@@ -250,21 +227,18 @@ CREATE TABLE Personagem (
 - `vida`: Vida do personagem.
 - `dano`: Dano causado pelo personagem.
 - `pontos`: Pontos associados ao personagem.
-- `idLocal`: Referência ao local onde o personagem se encontra.
+- `idFase`: Referência a fase onde o personagem se encontra.
+- `tipoJogador`: Tipo do Jogador
 
 ### Local
 
 A tabela **Local** armazena informações sobre os locais no jogo.
 
 ```sql
-CREATE TABLE Local (
-    idLocal SERIAL NOT NULL,
+CREATE TABLE Loja (
+    idLoja SERIAL NOT NULL,
     nome VARCHAR(50) NOT NULL,
-    descricao TEXT,
-    idFase INTEGER NOT NULL,
-
-    CONSTRAINT local_pk PRIMARY KEY (idLocal),
-    FOREIGN KEY (idFase) REFERENCES Fase(idFase)
+    CONSTRAINT loja_pk PRIMARY KEY (idLoja)
 );
 ```
 
@@ -272,19 +246,16 @@ CREATE TABLE Local (
 
 - `idLocal`: Identificador único do local (chave primária).
 - `nome`: Nome do local.
-- `descricao`: Descrição do local.
-- `idFase`: Referência à fase relacionada ao local.
 
 ### Checkpoint
 
 A tabela **Checkpoint** registra informações sobre os pontos de controle no jogo.
 
 ```sql
+
 CREATE TABLE Checkpoint (
     idCheckpoint SERIAL NOT NULL,
     pontuação INTEGER NOT NULL,
-    idLocal INTEGER NOT NULL,
-
     CONSTRAINT checkpoint_pk PRIMARY KEY (idCheckpoint)
 );
 ```
@@ -293,7 +264,6 @@ CREATE TABLE Checkpoint (
 
 - `idCheckpoint`: Identificador único do checkpoint (chave primária).
 - `pontuação`: Pontuação registrada no checkpoint.
-- `idLocal`: Referência ao local associado ao checkpoint.
 
 ### Jogador
 
@@ -301,14 +271,13 @@ A tabela **Jogador** armazena informações sobre os jogadores do jogo.
 
 ```sql
 CREATE TABLE Jogador (
-    idJogador SERIAL NOT NULL,
-    tipo VARCHAR(20) NOT NULL,
-    moeda INTEGER NOT NULL,
-    idItem INTEGER,
+    idPersonagem SERIAL NOT NULL,
+    moeda INTEGER,
+    idInventario INTEGER NOT NULL,
     idYoshi INTEGER,
-
-    CONSTRAINT jogador_pk PRIMARY KEY (idJogador),
-    FOREIGN KEY (idItem) REFERENCES Inventário(IdItem),
+    CONSTRAINT jogador_pk PRIMARY KEY (idPersonagem),
+    FOREIGN KEY (idPersonagem) REFERENCES Personagem(idPersonagem),
+    FOREIGN KEY (idInventario) REFERENCES Inventario(idInventario),
     FOREIGN KEY (idYoshi) REFERENCES Yoshi(idYoshi)
 );
 ```
@@ -316,9 +285,8 @@ CREATE TABLE Jogador (
 **Colunas:**
 
 - `idJogador`: Identificador único do jogador (chave primária).
-- `tipo`: Tipo de jogador.
 - `moeda`: Quantidade de moedas do jogador.
-- `idItem`: Referência ao item no inventário.
+- `idInventario`: Referência ao inventário.
 - `idYoshi`: Referência ao Yoshi associado.
 
 ### Instancia
@@ -331,7 +299,6 @@ CREATE TABLE Instancia (
     vidaAtual INTEGER NOT NULL,
     moedaAtual INTEGER NOT NULL,
     idJogador INTEGER NOT NULL,
-
     CONSTRAINT instancia_pk PRIMARY KEY (idInstancia)
 );
 ```
