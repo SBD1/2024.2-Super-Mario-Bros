@@ -247,7 +247,7 @@ def entrar_fase(stdscr, player, mundo, fase):
              #   block_hit_sound = os.path.join(os.path.dirname(__file__), "block_hit.mp3")
              #  sound_channel.play(pygame.mixer.Sound(block_hit_sound))
 
-                curses.napms(3000)
+                curses.napms(4000)
                 choice = stdscr.getkey()
 
                 if choice == "1":

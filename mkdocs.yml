@@ -23,6 +23,8 @@ nav:
   - Entrega 3:
       - Triggers e Stored Procedures: triggers.md
       - Apresentação: apresentacao3.md
+  - Apresentação Final:
+      - Apresentação: apresentacao4.md
 
 theme:
   name: material
