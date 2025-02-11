@@ -35,7 +35,7 @@ class Mario:
         # Verifica se a nova posição está dentro dos limites da matriz
         if 0 <= nova_posicao[0] < len(mapa) and 0 <= nova_posicao[1] < len(mapa[0]):
             self.posicao = nova_posicao
-            print(f"Mario se moveu para {self.posicao}")
+            # print(f"Mario se moveu para {self.posicao}")
             
             # Verifica se Mario passou pela posição do checkpoint
             if self.posicao == self.checkpoint and not self.salvou_checkpoint:

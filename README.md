@@ -21,6 +21,7 @@ Execute os seguintes comandos no terminal:
 ```sh
 pip install pygame
 pip install pyfiglet
+pip install psycopg2
 ```
 
 ### 🔊 Verificando e instalando o PulseAudio (Linux)
@@ -66,7 +67,7 @@ services:
 Para iniciar os serviços, execute:
 
 ```sh
-docker-compose up -d
+sudo docker-compose up
 ```
 
 ## 🚀 Executando o jogo
