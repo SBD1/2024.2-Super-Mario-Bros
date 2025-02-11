@@ -32,49 +32,45 @@ class Bloco:
             mario.vida += 20
             print("Você encontrou uma Vida! +20 de vida.")
 
-def exibir_mapa(stdscr, player, mapa):
-    stdscr.clear()  # Limpa a tela antes de desenhar o mapa
+def exibir_mapa(stdscr, player, mapa, mundo, fase, blocos):
+    stdscr.clear() 
     
-    # Verificar se o mapa é None antes de continuar
     if mapa is None:
         stdscr.addstr(0, 0, "Erro: Mapa não carregado corretamente.")
         stdscr.refresh()
         return
 
-    # Obtendo as dimensões da janela do terminal
     altura, largura = stdscr.getmaxyx()
 
-    # Usando pyfiglet para criar uma arte ASCII do título "FASE 1"
-    titulo_ascii = pyfiglet.figlet_format("FASE 1", font="slant")  # Usando a fonte "slant" como exemplo
-    
-    # Centralizando o título ASCII no topo da tela
+    titulo_ascii = pyfiglet.figlet_format(f"{mundo.name} - {fase.name}", font="small")
+
     titulo_x = (largura // 2) - (len(titulo_ascii.split("\n")[0]) // 2)
-    
-    # Exibindo o título bonito no topo da tela
+
     for i, linha in enumerate(titulo_ascii.split("\n")):
         stdscr.addstr(i, titulo_x, linha)
+
+    mapa_inicio_x = (largura // 2) - (len(mapa[0]) * 2 // 2) 
+    mapa_inicio_y = (altura // 2) - (len(mapa) // 2)
     
-    # Calculando o início para a matriz (centralizada na tela)
-    mapa_inicio_x = (largura // 2) - (len(mapa[0]) * 2 // 2)  # Para centralizar horizontalmente a matriz
-    mapa_inicio_y = (altura // 2) - (len(mapa) // 2)  # Para centralizar verticalmente a matriz
-    
-    # Exibindo a matriz do mapa
     for i in range(len(mapa)):
         for j in range(len(mapa[i])):
             if [i, j] == player.posicao:
-                stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "M")  # Exibe 'M' para Mario
-            elif mapa[i][j] == 'X':  # Exibe 'X' para indicar a posição da batalha (após a derrota do inimigo)
+                stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "M") 
+            elif mapa[i][j] == 'X':  
                 stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "X")
-            elif mapa[i][j] == 'I':  # Exibe 'I' para indicar o inimigo, quando Mario perde
+            elif mapa[i][j] == 'I':  
                 stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "I")
-            elif mapa[i][j] == 'C':  # Exibe 'C' para indicar o cogumelo
+            elif mapa[i][j] == 'C':  
                 stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "C")
-            elif mapa[i][j] == 'B':  # Exibe 'B' para indicar o Bowser
-                stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, "B")
             else:
-                stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, ".")  # Exibe '.' para as outras células
-    
+                stdscr.addstr(mapa_inicio_y + i, mapa_inicio_x + j * 2, ".") 
+
+    for bloco in blocos:
+        bloco_x, bloco_y = bloco.posicao
+        stdscr.addstr(mapa_inicio_y + bloco_x, mapa_inicio_x + bloco_y * 2, "B", curses.color_pair(2) | curses.A_BOLD) 
+
     stdscr.refresh()
+
 
 
 def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
@@ -179,7 +175,7 @@ def turno_batalha(stdscr, player, inimigo, mapa, items, music_channel):
     return True
 
 
-def entrar_fase(stdscr, player, fase):
+def entrar_fase(stdscr, player, mundo, fase):
     from character import get_block_item, get_inventory_items, insert_item_into_inventory
     curses.curs_set(0)  # Desabilitar o cursor
     stdscr.nodelay(1)  # Não bloquear na espera de uma tecla
@@ -215,7 +211,7 @@ def entrar_fase(stdscr, player, fase):
             break
 
     while player.vida > 0:
-        exibir_mapa(stdscr, player, mapa)
+        exibir_mapa(stdscr, player, mapa, mundo, fase, blocos)
 
         # Verifica se o jogador chegou ao fim da fase
         if player.posicao == fim_fase:

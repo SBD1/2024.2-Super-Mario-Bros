@@ -345,6 +345,8 @@ def insert_item_into_inventory(player_id, item_id, quantity):
         finally:
             connection.close()
 
+
+
 # def active_checkpoint(player):
 #     player.last_checkpoint = player.position.copy()  # Salva a posição do jogador no último checkpoint
 #     player.health = player.max_health  # Restaura o hp completo do jogador

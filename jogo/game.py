@@ -1,10 +1,11 @@
 from character import choose_character
 from battle import turno_batalha, entrar_fase
-from phase import choose_phase
+from phase import choose_phase, get_inimigo_by_fase
 from local import initial_local_by_phase, exploration_local, get_encounter_by_local
 from world import choose_world
 from loja import get_loja_with_items, comprar_item, vender_item, get_lojaId_by_world
 from db import connect_to_db
+
 
 import curses
 import random
@@ -39,35 +40,38 @@ def init_game(stdscr):
     stdscr.getch()
 
     character = choose_character(stdscr) 
+
+    while True:
+        world = choose_world(stdscr)
+
+        phase, fases_restantes = choose_phase(stdscr, world.id_mundo) 
+        fases_restantes.insert(0, phase)
+        index_phase = 0
+        if visit_shop(stdscr):
+            open_shop(stdscr, character, world)
+
+        stdscr.clear()
+        stdscr.addstr(0, 0, f"Você está na fase: {fases_restantes[index_phase].name}")
+        stdscr.refresh()
+        stdscr.getch()
+
+        while character.vida != 0 and index_phase < len(fases_restantes) :
+            resultado = entrar_fase(stdscr, character, world, fases_restantes[index_phase])
+            if resultado == "venceu":
+                index_phase += 1
+                
+            else:
+                stdscr.clear()
+                stdscr.addstr(0, 0, "Você perdeu, deseja tentar novamente? (S/N)")
+                stdscr.refresh()
+                key = stdscr.getch()
+                if key in (ord('n'), ord('N')):
+                    break
+
     
-    world = choose_world(stdscr)
 
-    phase, fases_restantes = choose_phase(stdscr, world.id_mundo) 
-    fases_restantes.insert(0, phase)
-    index_phase = 0
-    if visit_shop(stdscr):
-        open_shop(stdscr, character, world)
-
-    stdscr.clear()
-    stdscr.addstr(0, 0, f"Você está na fase: {fases_restantes[index_phase].name}")
-    stdscr.refresh()
-    stdscr.getch()
-
-    while character.vida != 0 and index_phase < len(fases_restantes) :
-        resultado = entrar_fase(stdscr, character, fases_restantes[index_phase])
-        if resultado == "venceu":
-            print("passar de fase")
-            index_phase += 1
-        else:
-            stdscr.clear()
-            stdscr.addstr(0, 0, "Você perdeu, deseja tentar novamente? (S/N)")
-            stdscr.refresh()
-            key = stdscr.getch()
-            if key in (ord('n'), ord('N')):
-                break
-
-    if visit_shop(stdscr):
-        open_shop(stdscr, character, world)
+        if visit_shop(stdscr):
+            open_shop(stdscr, character, world)
     
     stdscr.clear()
     stdscr.addstr(0, 0, f"{character.name} foi derrotado")
