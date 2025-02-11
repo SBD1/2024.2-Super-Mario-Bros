@@ -87,9 +87,10 @@ python3 game.py
 
 ## 🎬 Apresentações
 
-  - [Apresentação Módulo 1]()
-  - [Apresentação Módulo 2]()
-  - [Apresentação Módulo 3]()
+  - [Apresentação Módulo 1](https://sbd1.github.io/2024.2-Super-Mario-Bros/apresentacao/)
+  - [Apresentação Módulo 2](https://sbd1.github.io/2024.2-Super-Mario-Bros/apresentacao2/)
+  - [Apresentação Módulo 3](https://sbd1.github.io/2024.2-Super-Mario-Bros/apresentacao3/)
+  - [Apresentação Final](https://sbd1.github.io/2024.2-Super-Mario-Bros/apresentacao4/)
 
 ## 👨‍💻 Equipe do Projeto
 
